@@ -90,6 +90,7 @@ function put(c,id,o){if(db){db.collection(c).doc(id).set(o).catch(function(){not
 function upd(c,id,patch){var it=data[c].find(function(x){return x.id===id});if(!it)return;var n={};for(var k in it)if(k!=="id")n[k]=it[k];for(var k2 in patch)n[k2]=patch[k2];put(c,id,n)}
 function evs(k){return data.events.filter(function(e){return e.date===k&&(!S.who||e.who===S.who)}).sort(function(a,b){return (a.time||"").localeCompare(b.time||"")})}
 function chip(e){return '<div class="ev" style="background:'+col(e.who)+'">'+(e.time?esc(e.time)+" ":"")+esc(e.title)+'</div>'}
+function nopts(a,b,st){var h="";for(var i=a;i<=b;i+=st)h+='<option>'+String(i).padStart(2,"0")+'</option>';return h}
 function opts(){return data.people.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'}).join("")}
 function mon(k){var x=D(k);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
 function people(){
@@ -118,7 +119,7 @@ function agenda(){
       h+='<div class="wcol" style="'+(k2===today?"background:var(--today)":"")+'" data-a="day" data-k="'+k2+'"><b>'+y.toLocaleDateString("nl-NL",{weekday:"short",day:"numeric"})+'</b>'+evs(k2).map(chip).join("")+'</div>'}
     h+='</div></div>'}
   else{var l2=evs(S.sel);h+=l2.length?l2.map(function(e){return '<div class="item bar" style="border-color:'+col(e.who)+'"><div><b>'+esc(e.title)+'</b><br><small>'+(e.time?esc(e.time):"hele dag")+(e.who?" · "+esc(pname(e.who)):"")+'</small></div><button class="x" data-a="delev" data-id="'+esc(e.id)+'">Wis</button></div>'}).join(""):'<div class="note">Niets gepland.</div>'}
-  h+='</div><div class="card"><h2>Nieuwe afspraak op '+D(S.sel).toLocaleDateString("nl-NL",{day:"numeric",month:"long"})+'</h2><div class="row"><input class="w" id="et" placeholder="Wat"><input type="time" id="etm"><select id="ew">'+opts()+'</select><button class="primary" data-a="addev">Toevoegen</button></div></div>';
+  h+='</div><div class="card"><h2>Nieuwe afspraak op '+D(S.sel).toLocaleDateString("nl-NL",{day:"numeric",month:"long"})+'</h2><div class="row"><input class="w" id="et" placeholder="Wat"><select id="eh"><option value="">Uur</option>'+nopts(0,23,1)+'</select><select id="em"><option value="">Min</option>'+nopts(0,55,5)+'</select><select id="ew">'+opts()+'</select><button class="primary" data-a="addev">Toevoegen</button></div></div>';
   if(S.view!=="dag"){var l3=evs(S.sel);if(l3.length)h+='<div class="card"><h2>'+D(S.sel).toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"})+'</h2>'+l3.map(function(e){return '<div class="item bar" style="border-color:'+col(e.who)+'"><div>'+esc(e.title)+'<br><small>'+(e.time?esc(e.time):"hele dag")+(e.who?" · "+esc(pname(e.who)):"")+'</small></div><button class="x" data-a="delev" data-id="'+esc(e.id)+'">Wis</button></div>'}).join("")+'</div>'}
   return h}
 var EM=[["tand","🪥"],["douche","🚿"],["bad","🛁"],["pyjama","😴"],["slap","😴"],["bed","🛏️"],["afwas","🍽️"],["vaatwas","🍽️"],["opruim","🧸"],["kamer","🧸"],["huiswerk","📚"],["lees","📖"],["ontbijt","🥣"],["eten","🍽️"],["boodschap","🛒"],["stofzuig","🧹"],["veeg","🧹"],["vuilnis","🗑️"],["afval","🗑️"],["plant","🪴"],["hond","🐶"],["kat","🐱"],["was","🧺"],["kleed","👕"],["tas","🎒"],["schoen","👟"],["haar","💇"]];
@@ -177,7 +178,7 @@ $("app").onclick=function(e){
     if(n===0)d=new Date();else if(S.tab==="agenda"&&S.view==="maand"){d.setDate(1);d.setMonth(d.getMonth()+n)}else d.setDate(d.getDate()+n*(S.tab==="eten"||S.view==="week"?7:1));
     S.sel=iso(d)}
   else if(a==="savep"){var nm=val("pn");if(!nm)return;add("people",{name:nm,color:$("pc").value,emoji:$("pe").value,stars:0});S.addp=false}
-  else if(a==="addev"){var ti=val("et");if(!ti)return;add("events",{title:ti,date:S.sel,time:val("etm"),who:val("ew")})}
+  else if(a==="addev"){var ti=val("et");if(!ti)return;add("events",{title:ti,date:S.sel,time:val("eh")?val("eh")+":"+(val("em")||"00"):"",who:val("ew")})}
   else if(a==="delev")del("events",t.dataset.id);
   else if(a==="addtask"){var tt=val("tt");if(!tt||!val("tw"))return;add("tasks",{title:tt,who:val("tw"),date:iso(new Date()),part:val("tp"),emoji:val("te"),stars:Math.max(1,parseInt(val("ts"))||1),daily:$("td").checked,doneOn:""});S.addt=false}
   else if(a==="fab")S.addt=!S.addt;
@@ -205,7 +206,7 @@ function mkdb(){return{collection:function(c){return{
 async function load(){var r=await sb.from("docs").select("collection,id,data");if(r.error){note("Laden mislukt");return}
   Object.keys(data).forEach(function(k){data[k]=[]});
   r.data.forEach(function(x){if(data[x.collection])data[x.collection].push(Object.assign({id:x.id},x.data))});
-  var a=document.activeElement;if(a&&a.tagName==="INPUT"&&a.value)dirty=true;else render()}
+  var a=document.activeElement;if(a&&(a.tagName==="INPUT"||a.tagName==="SELECT"))dirty=true;else render()}
 function start(){db=mkdb();load();sb.channel("docs").on("postgres_changes",{event:"*",schema:"public",table:"docs"},function(){load()}).subscribe();note("Gesynchroniseerd")}
 function login(){$("app").innerHTML='<div class="card" style="max-width:420px;margin:30px auto"><h2>Inloggen</h2><div class="row"><input class="w" id="le" type="email" placeholder="E-mail" autocomplete="username"><input class="w" id="lp" type="password" placeholder="Wachtwoord" autocomplete="current-password"><button class="primary" id="lb">Inloggen</button><button id="lr">Account maken</button></div><div class="note" id="lm"></div></div>';
   function go(up){var e=val("le"),p=$("lp").value;if(!e||p.length<6){$("lm").textContent="Vul je e-mail en een wachtwoord van minimaal 6 tekens in.";return}
