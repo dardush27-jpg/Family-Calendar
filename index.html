@@ -67,6 +67,9 @@ button{border-radius:16px;font-weight:800}
 .tt{font-weight:800;font-size:1.15rem}
 .ck{width:46px;height:46px;border-radius:50%;border:3px solid var(--line);flex:none;display:grid;place-items:center;color:#fff;font-size:1.6rem;background:var(--card)}
 .fab{position:fixed;right:18px;bottom:92px;width:62px;height:62px;border-radius:50%;background:#3a7bd5;color:#fff;font-size:2rem;padding:0;z-index:15;border:0;box-shadow:0 4px 10px rgba(0,0,0,.25)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.mb{background:var(--card);border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));width:100%;max-width:520px;max-height:85vh;overflow-y:auto}
+@media (min-width:800px){.ov{align-items:center}.mb{border-radius:24px}}
 </style>
 </head>
 <body>
@@ -119,9 +122,14 @@ function agenda(){
       h+='<div class="wcol" style="'+(k2===today?"background:var(--today)":"")+'" data-a="day" data-k="'+k2+'"><b>'+y.toLocaleDateString("nl-NL",{weekday:"short",day:"numeric"})+'</b>'+evs(k2).map(chip).join("")+'</div>'}
     h+='</div></div>'}
   else{var l2=evs(S.sel);h+=l2.length?l2.map(function(e){return '<div class="item bar" style="border-color:'+col(e.who)+'"><div><b>'+esc(e.title)+'</b><br><small>'+(e.time?esc(e.time):"hele dag")+(e.who?" · "+esc(pname(e.who)):"")+'</small></div><button class="x" data-a="delev" data-id="'+esc(e.id)+'">Wis</button></div>'}).join(""):'<div class="note">Niets gepland.</div>'}
-  h+='</div><div class="card"><h2>Nieuwe afspraak op '+D(S.sel).toLocaleDateString("nl-NL",{day:"numeric",month:"long"})+'</h2><div class="row"><input class="w" id="et" placeholder="Wat"><select id="eh"><option value="">Uur</option>'+nopts(0,23,1)+'</select><select id="em"><option value="">Min</option>'+nopts(0,55,5)+'</select><select id="ew">'+opts()+'</select><button class="primary" data-a="addev">Toevoegen</button></div></div>';
-  if(S.view!=="dag"){var l3=evs(S.sel);if(l3.length)h+='<div class="card"><h2>'+D(S.sel).toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"})+'</h2>'+l3.map(function(e){return '<div class="item bar" style="border-color:'+col(e.who)+'"><div>'+esc(e.title)+'<br><small>'+(e.time?esc(e.time):"hele dag")+(e.who?" · "+esc(pname(e.who)):"")+'</small></div><button class="x" data-a="delev" data-id="'+esc(e.id)+'">Wis</button></div>'}).join("")+'</div>'}
+  h+='</div>';
+  if(S.view!=="dag"){var l3=evs(S.sel);if(l3.length)h+='<div class="card"><h2>'+D(S.sel).toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"})+'</h2>'+evrows(l3)+'</div>'}
+  if(S.view==="dag")h+='<div class="card">'+evform()+'</div>';
+  if(S.modal&&S.view!=="dag")h+=modal();
   return h}
+function evform(){return '<h2>Nieuwe afspraak op '+D(S.sel).toLocaleDateString("nl-NL",{day:"numeric",month:"long"})+'</h2><div class="row"><input class="w" id="et" placeholder="Wat"><select id="eh"><option value="">Uur</option>'+nopts(0,23,1)+'</select><select id="em"><option value="">Min</option>'+nopts(0,55,5)+'</select><select id="ew">'+opts()+'</select><button class="primary" data-a="addev">Toevoegen</button></div>'}
+function evrows(l){return l.length?l.map(function(e){return '<div class="item bar" style="border-color:'+col(e.who)+'"><div>'+esc(e.title)+'<br><small>'+(e.time?esc(e.time):"hele dag")+(e.who?" · "+esc(pname(e.who)):"")+'</small></div><button class="x" data-a="delev" data-id="'+esc(e.id)+'">Wis</button></div>'}).join(""):'<div class="note">Niets gepland op deze dag.</div>'}
+function modal(){return '<div class="ov" data-a="close"><div class="mb" data-a="noop"><div class="head"><h2 style="text-align:left">'+D(S.sel).toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"})+'</h2><button data-a="close">✕</button></div>'+evrows(evs(S.sel))+'<div style="margin-top:14px">'+evform()+'</div></div></div>'}
 var EM=[["tand","🪥"],["douche","🚿"],["bad","🛁"],["pyjama","😴"],["slap","😴"],["bed","🛏️"],["afwas","🍽️"],["vaatwas","🍽️"],["opruim","🧸"],["kamer","🧸"],["huiswerk","📚"],["lees","📖"],["ontbijt","🥣"],["eten","🍽️"],["boodschap","🛒"],["stofzuig","🧹"],["veeg","🧹"],["vuilnis","🗑️"],["afval","🗑️"],["plant","🪴"],["hond","🐶"],["kat","🐱"],["was","🧺"],["kleed","👕"],["tas","🎒"],["schoen","👟"],["haar","💇"]];
 function emo(t){t=t.toLowerCase();for(var i=0;i<EM.length;i++)if(t.indexOf(EM[i][0])>=0)return EM[i][1];return "⭐"}
 var PARTS=[["ochtend","☀️ Ochtend"],["middag","🌤️ Middag"],["avond","🌙 Avond"],["klusjes","🧹 Klusjes"]];
@@ -169,11 +177,13 @@ function render(){
 }
 $("app").onclick=function(e){
   var t=e.target.closest("[data-a]");if(!t||t.tagName==="INPUT")return;var a=t.dataset.a,x;
-  if(a==="tab"){S.tab=t.dataset.t;if(S.tab==="wand"){try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(function(){})}catch(e){}}}
-  else if(a==="view")S.view=t.dataset.v;
+  if(a==="tab"){S.tab=t.dataset.t;S.modal=false;if(S.tab==="wand"){try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(function(){})}catch(e){}}}
+  else if(a==="view"){S.view=t.dataset.v;S.modal=false}
   else if(a==="who")S.who=t.dataset.id;
   else if(a==="addp")S.addp=!S.addp;
-  else if(a==="day"){S.sel=t.dataset.k;if(S.view==="week"||S.view==="maand"){}}
+  else if(a==="day"){S.sel=t.dataset.k;S.modal=true}
+  else if(a==="close")S.modal=false;
+  else if(a==="noop")return;
   else if(a==="nav"){var n=+t.dataset.n,d=D(S.sel);
     if(n===0)d=new Date();else if(S.tab==="agenda"&&S.view==="maand"){d.setDate(1);d.setMonth(d.getMonth()+n)}else d.setDate(d.getDate()+n*(S.tab==="eten"||S.view==="week"?7:1));
     S.sel=iso(d)}
