@@ -70,12 +70,13 @@ button{border-radius:16px;font-weight:800}
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
 .mb{background:var(--card);border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));width:100%;max-width:520px;max-height:85vh;overflow-y:auto}
 @media (min-width:800px){.ov{align-items:center}.mb{border-radius:24px}}
+#toasts{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:100;pointer-events:none}.toast{background:#3a7bd5;color:#fff;padding:12px 18px;border-radius:18px;font-weight:800;max-width:90vw;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 </style>
 </head>
 <body>
-<div class="head"><h1 id="hd">Gezinsagenda</h1><small id="note"></small><button id="th" style="min-height:40px;padding:4px 12px" aria-label="Thema wisselen">🌓</button></div>
+<div class="head"><h1 id="hd">Gezinsagenda</h1><small id="note"></small><button id="bell" style="min-height:40px;padding:4px 12px" aria-label="Meldingen">🔔</button><button id="th" style="min-height:40px;padding:4px 12px" aria-label="Thema wisselen">🌓</button></div>
 <div id="app"></div>
-<div class="note" style="text-align:center;margin:16px 0 90px">Versie 5</div>
+<div class="note" style="text-align:center;margin:16px 0 90px">Versie 6</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 var data={people:[],events:[],tasks:[],items:[],meals:[],rewards:[]},db=null,dirty=false;
@@ -208,17 +209,35 @@ function theme(m){var r=document.documentElement;if(m==="auto")r.removeAttribute
 var tm0="auto";try{tm0=localStorage.getItem("thm")||"auto"}catch(e){}
 theme(tm0);
 $("th").onclick=function(){var c=document.documentElement.getAttribute("data-theme")||"auto";theme(c==="auto"?"light":c==="light"?"dark":"auto")};
+function bellUpd(){var b=$("bell");if(!window.Notification){b.style.display="none";return}b.textContent=Notification.permission==="granted"?"🔔":"🔕"}
+$("bell").onclick=function(){if(window.Notification&&Notification.permission!=="granted")Notification.requestPermission().then(bellUpd);else ban("Meldingen staan aan")};
+bellUpd();
 render();note("Laden…");
 var SUPABASE_URL="https://vgbxhqbelqiqulocrnzd.supabase.co",SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnYnhocWJlbHFpcXVsb2NybnpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxODQ5OTYsImV4cCI6MjEwODc2MDk5Nn0.UKQpXsmZ33cwXcmPebQlwsgwdl57B2zKge2JQNeEsKk",sb=null;
 function wr(p){return Promise.resolve(p).then(function(r){if(r.error)throw r.error;load()})}
+var me="",prev=null,recent={};
+function cap(x){return x?x.charAt(0).toUpperCase()+x.slice(1):"Iemand"}
+function mark(id){recent[id]=Date.now()}
+function mine(id){return recent[id]&&Date.now()-recent[id]<15000}
+function ban(m){var h=$("toasts");if(!h){h=document.createElement("div");h.id="toasts";document.body.appendChild(h)}var b=document.createElement("div");b.className="toast";b.textContent="🔔 "+m;h.appendChild(b);setTimeout(function(){b.remove()},7000)}
+function notify(m){ban(m);if(window.Notification&&Notification.permission==="granted"&&document.hidden&&navigator.serviceWorker){navigator.serviceWorker.ready.then(function(r){r.showNotification("Gezinsagenda",{body:m,icon:"icon-192.png"})}).catch(function(){})}}
 function mkdb(){return{collection:function(c){return{
-  add:function(o){return wr(sb.from("docs").insert({collection:c,id:crypto.randomUUID(),data:o}))},
-  doc:function(id){return{set:function(o){return wr(sb.from("docs").upsert({collection:c,id:id,data:o}))},delete:function(){return wr(sb.from("docs").delete().eq("collection",c).eq("id",id))}}}}}}}
+  add:function(o){var id=crypto.randomUUID();mark(id);return wr(sb.from("docs").insert({collection:c,id:id,data:Object.assign({},o,{by:me})}))},
+  doc:function(id){return{set:function(o){mark(id);return wr(sb.from("docs").upsert({collection:c,id:id,data:Object.assign({},o,{by:me})}))},delete:function(){mark(id);return wr(sb.from("docs").delete().eq("collection",c).eq("id",id))}}}}}}}
 async function load(){var r=await sb.from("docs").select("collection,id,data");if(r.error){note("Laden mislukt");return}
   Object.keys(data).forEach(function(k){data[k]=[]});
   r.data.forEach(function(x){if(data[x.collection])data[x.collection].push(Object.assign({id:x.id},x.data))});
+  var snap={},L={events:"een afspraak",tasks:"een taak",items:"iets op de lijst"};
+  ["events","tasks","items"].forEach(function(c){data[c].forEach(function(x){snap[c+"/"+x.id]=x})});
+  if(prev){
+    Object.keys(snap).forEach(function(k){var n=snap[k],o=prev[k],c=k.split("/")[0],t=n.title||n.text||"";
+      if(!o){if(n.by&&n.by!==me)notify(cap(n.by)+" heeft "+L[c]+" toegevoegd: "+t)}
+      else if(c==="events"&&n.by&&n.by!==me&&JSON.stringify(o)!==JSON.stringify(n))notify(cap(n.by)+" heeft een afspraak aangepast: "+t)});
+    Object.keys(prev).forEach(function(k){if(!snap[k]&&k.indexOf("events/")===0&&!mine(k.split("/")[1]))notify("Een afspraak is verwijderd: "+(prev[k].title||""))})}
+  prev=snap;
   var a=document.activeElement;if(a&&(a.tagName==="INPUT"||a.tagName==="SELECT"))dirty=true;else render()}
-function start(){db=mkdb();load();sb.channel("docs").on("postgres_changes",{event:"*",schema:"public",table:"docs"},function(){load()}).subscribe();note("Gesynchroniseerd")}
+async function start(){var s=await sb.auth.getSession();me=((s.data.session&&s.data.session.user.email)||"").split("@")[0];db=mkdb();await load();sb.channel("docs").on("postgres_changes",{event:"*",schema:"public",table:"docs"},function(){load()}).subscribe();note("Gesynchroniseerd")}
+document.addEventListener("visibilitychange",function(){if(!document.hidden&&sb&&db)load()});
 function login(){$("app").innerHTML='<div class="card" style="max-width:420px;margin:30px auto"><h2>Inloggen</h2><div class="row"><input class="w" id="le" type="email" placeholder="E-mail" autocomplete="username"><input class="w" id="lp" type="password" placeholder="Wachtwoord" autocomplete="current-password"><button class="primary" id="lb">Inloggen</button><button id="lr">Account maken</button></div><div class="note" id="lm"></div></div>';
   function go(up){var e=val("le"),p=$("lp").value;if(!e||p.length<6){$("lm").textContent="Vul je e-mail en een wachtwoord van minimaal 6 tekens in.";return}
     (up?sb.auth.signUp({email:e,password:p}):sb.auth.signInWithPassword({email:e,password:p})).then(function(r){if(r.error){$("lm").textContent=r.error.message;return}if(r.data.session)start();else $("lm").textContent="Account gemaakt. Log nu in."})}
