@@ -78,12 +78,13 @@ button{border-radius:16px;font-weight:800}
 #ss.dim #ssc{left:0;right:0;bottom:auto;text-align:center;opacity:.35}
 .cf{position:fixed;top:-20px;width:10px;height:14px;z-index:250;border-radius:2px;animation:fall 2.6s linear forwards;pointer-events:none}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.gm{grid-template-columns:28px repeat(7,1fr)}.wkn{display:grid;place-items:center;color:var(--muted);font-size:.8rem;font-weight:800}
 </style>
 </head>
 <body>
 <div class="head"><h1 id="hd">Gezinsagenda</h1><span id="wx" style="font-weight:800;white-space:nowrap"></span><small id="note"></small><button id="meb" style="min-height:40px;padding:4px 12px" aria-label="Profiel">👤</button><button id="bell" style="min-height:40px;padding:4px 12px" aria-label="Meldingen">🔔</button><button id="th" style="min-height:40px;padding:4px 12px" aria-label="Thema wisselen">🌓</button></div>
 <div id="app"></div>
-<div class="note" style="text-align:center;margin:16px 0 90px">Versie 8</div>
+<div class="note" style="text-align:center;margin:16px 0 90px">Versie 9</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 var data={people:[],events:[],tasks:[],items:[],meals:[],rewards:[]},db=null,dirty=false;
@@ -110,6 +111,7 @@ function evs(k){return data.events.filter(function(e){return hits(e,k)&&(!S.who|
 function chip(e){return '<div class="ev" style="background:'+col(e.who)+'">'+(e.time?esc(e.time)+" ":"")+esc(e.title)+(e.rep?' ↻':'')+'</div>'}
 function nopts(a,b,st){var h="";for(var i=a;i<=b;i+=st)h+='<option>'+String(i).padStart(2,"0")+'</option>';return h}
 function opts(){return data.people.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'}).join("")}
+function wk(d){var x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);var y=new Date(Date.UTC(x.getUTCFullYear(),0,1));return Math.ceil(((x-y)/864e5+1)/7)}
 function mon(k){var x=D(k);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
 function people(){
   var h='<div class="row" style="margin-bottom:10px"><button class="chip'+(S.who?"":" on")+'" data-a="who" data-id="">Iedereen</button>';
@@ -121,14 +123,14 @@ function agenda(){
   var h='<div class="row" style="margin-bottom:10px">'+["dag","week","maand"].map(function(v){return '<button class="'+(S.view===v?"on":"")+'" data-a="view" data-v="'+v+'">'+v+'</button>'}).join("")+'</div><div class="card"><div class="head"><button data-a="nav" data-n="-1">‹</button>';
   var d=D(S.sel),t;
   if(S.view==="maand")t=d.toLocaleDateString("nl-NL",{month:"long",year:"numeric"});
-  else if(S.view==="week"){var m=mon(S.sel),e=new Date(m);e.setDate(m.getDate()+6);t=m.getDate()+" – "+e.toLocaleDateString("nl-NL",{day:"numeric",month:"long"})}
+  else if(S.view==="week"){var m=mon(S.sel),e=new Date(m);e.setDate(m.getDate()+6);t="Week "+wk(m)+" · "+m.getDate()+" – "+e.toLocaleDateString("nl-NL",{day:"numeric",month:"long"})}
   else t=d.toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"});
   h+='<h2>'+t+'</h2><button data-a="nav" data-n="0">Vandaag</button><button data-a="nav" data-n="1">›</button></div>';
   var today=iso(new Date());
   if(S.view==="maand"){
     var f=new Date(d.getFullYear(),d.getMonth(),1,12),st=new Date(f);st.setDate(1-((f.getDay()+6)%7));
-    h+='<div class="grid">'+["ma","di","wo","do","vr","za","zo"].map(function(x){return '<div class="dow">'+x+'</div>'}).join("")+'</div><div class="grid" style="margin-top:4px">';
-    for(var i=0;i<42;i++){var x=new Date(st);x.setDate(st.getDate()+i);var k=iso(x),l=evs(k);
+    h+='<div class="grid gm"><div class="dow">wk</div>'+["ma","di","wo","do","vr","za","zo"].map(function(x){return '<div class="dow">'+x+'</div>'}).join("")+'</div><div class="grid gm" style="margin-top:4px">';
+    for(var i=0;i<42;i++){var x=new Date(st);x.setDate(st.getDate()+i);var k=iso(x),l=evs(k);if(i%7===0)h+='<div class="wkn">'+wk(x)+'</div>';
       h+='<div class="day'+(x.getMonth()!==d.getMonth()?" other":"")+(k===today?" today":"")+(k===S.sel?" sel":"")+'" data-a="day" data-k="'+k+'"><b>'+x.getDate()+'</b>'+l.slice(0,2).map(chip).join("")+(l.length>2?'<small>+'+(l.length-2)+'</small>':"")+'</div>'}
     h+='</div>'}
   else if(S.view==="week"){
