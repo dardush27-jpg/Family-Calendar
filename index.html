@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Gezinsagenda</title>
-<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#ff7a59"><link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#ff7a59"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&display=swap">
 <style>
 :root{--bg:#faf7f2;--card:#fff;--text:#2b2b2b;--muted:#8a8478;--line:#e8e2d8;--accent:#3a7bd5;--today:#e8f0fc;--sel:#d6e4fa;
@@ -84,7 +84,7 @@ button{border-radius:16px;font-weight:800}
 <body>
 <div class="head"><h1 id="hd">Gezinsagenda</h1><span id="wx" style="font-weight:800;white-space:nowrap"></span><small id="note"></small><button id="meb" style="min-height:40px;padding:4px 12px" aria-label="Profiel">👤</button><button id="bell" style="min-height:40px;padding:4px 12px" aria-label="Meldingen">🔔</button><button id="th" style="min-height:40px;padding:4px 12px" aria-label="Thema wisselen">🌓</button></div>
 <div id="app"></div>
-<div class="note" style="text-align:center;margin:16px 0 90px">Versie 13</div>
+<div class="note" style="text-align:center;margin:16px 0 90px">Versie 15</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 var data={people:[],events:[],tasks:[],items:[],meals:[],rewards:[],feeds:[]},db=null,dirty=false;
@@ -225,7 +225,7 @@ function extLoad(){if(!sb||!db)return;
   var d=D(S.sel),a=new Date(d.getFullYear(),d.getMonth()-1,1),b=new Date(d.getFullYear(),d.getMonth()+2,1);
   var key=iso(a)+data.feeds.map(function(f){return f.id}).join();
   if(key===extKey&&Date.now()-extAt<6e5)return;extKey=key;extAt=Date.now();
-  sb.auth.getSession().then(function(s){var tk=s.data.session&&s.data.session.access_token;return fetch(SUPABASE_URL+"/functions/v1/ics",{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify({from:iso(a),to:iso(b),token:tk})})}).then(function(r){return r.text().then(function(tx){var j=null;try{j=JSON.parse(tx)}catch(e){}return{st:r.status,j:j,tx:tx}})}).then(function(x){if(x.st!==200||!x.j){note("Schoolagenda: serverfout "+x.st+" "+(x.tx||"").slice(0,100));extKey="";return}var evl=x.j.events||[];note(x.j.errors&&x.j.errors.length?"Schoolagenda: "+x.j.errors[0]:"Schoolagenda: "+evl.length+" afspraken");EXT=evl.map(function(e){e.ext=true;e.id="x"+e.date+e.title;return e});render()}).catch(function(e){note("Schoolagenda: geen verbinding ("+(e&&e.message||e)+")");extKey=""})}
+  sb.auth.getSession().then(function(s){var tk=s.data.session&&s.data.session.access_token;return fetch(SUPABASE_URL+"/functions/v1/ics?from="+iso(a)+"&to="+iso(b)+"&token="+encodeURIComponent(tk))}).then(function(r){return r.text().then(function(tx){var j=null;try{j=JSON.parse(tx)}catch(e){}return{st:r.status,j:j,tx:tx}})}).then(function(x){if(x.st!==200||!x.j){note("Schoolagenda: serverfout "+x.st+" "+(x.tx||"").slice(0,100));extKey="";return}var evl=x.j.events||[];note(x.j.errors&&x.j.errors.length?"Schoolagenda: "+x.j.errors[0]:"Schoolagenda: "+evl.length+" afspraken");EXT=evl.map(function(e){e.ext=true;e.id="x"+e.date+e.title;return e});render()}).catch(function(e){note("Schoolagenda: geen verbinding ("+(e&&e.message||e)+")");extKey=""})}
 function tick(){var n=new Date();$("hd").textContent=n.toLocaleDateString("nl-NL",{weekday:"short",day:"numeric",month:"short"})+"  "+n.toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"})}
 setInterval(tick,1000);tick();
 function render(){
