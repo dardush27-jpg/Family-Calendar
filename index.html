@@ -80,13 +80,50 @@ button{border-radius:16px;font-weight:800}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
 .gm{grid-template-columns:28px repeat(7,1fr)}.wkn{display:grid;place-items:center;color:var(--muted);font-size:.8rem;font-weight:800}
 .av{overflow:hidden}.avi{width:100%;height:100%;object-fit:cover;display:block}.chip .avi{width:26px;height:26px;border-radius:50%;vertical-align:middle;display:inline-block}
+
+/* ===== Thema: Oceaan-glas (mix van Zacht Glas + Oceaan & Bubbels) ===== */
+:root{--bgg:linear-gradient(170deg,#7fd8ff 0%,#aee9ef 24%,#e6d9ff 58%,#ffd1e6 100%);--bg:rgba(255,255,255,.75);--text:#2f2a5a;--muted:#6f6a96;--card:rgba(255,255,255,.6);--line:rgba(255,255,255,.9);--accent:#6c63ff;--today:rgba(255,255,255,.9);--sel:rgba(124,107,255,.25);--grad:linear-gradient(135deg,#00b8d9,#8a6bff);--mb:rgba(255,255,255,.94)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bgg:linear-gradient(170deg,#0d3a5c,#2a2a72 58%,#4b2a66);--bg:rgba(255,255,255,.14);--text:#f1eeff;--muted:#b4aedd;--card:rgba(255,255,255,.13);--line:rgba(255,255,255,.24);--accent:#9d8cff;--today:rgba(255,255,255,.22);--sel:rgba(157,140,255,.38);--mb:rgba(40,34,92,.95)}}
+:root[data-theme="dark"]{--bgg:linear-gradient(170deg,#0d3a5c,#2a2a72 58%,#4b2a66);--bg:rgba(255,255,255,.14);--text:#f1eeff;--muted:#b4aedd;--card:rgba(255,255,255,.13);--line:rgba(255,255,255,.24);--accent:#9d8cff;--today:rgba(255,255,255,.22);--sel:rgba(157,140,255,.38);--mb:rgba(40,34,92,.95)}
+html{background:var(--bgg);background-attachment:fixed;min-height:100%}
+body{background:transparent;color:var(--text)}
+body::before,body::after{content:"";position:fixed;border-radius:50%;pointer-events:none;z-index:-1}
+body::before{width:240px;height:240px;left:-70px;top:140px;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.75),rgba(255,255,255,.06))}
+body::after{width:190px;height:190px;right:-55px;bottom:190px;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.7),rgba(255,255,255,.05))}
+.card{background:var(--card);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:34px 34px 34px 10px;box-shadow:0 8px 24px rgba(80,70,160,.13)}
+button{background:var(--card);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid var(--line);color:var(--text);border-radius:999px}
+button.on,button.primary{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(108,99,255,.35)}
+input,select{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:999px;padding-left:14px}
+#hd{font-size:1.3rem;font-weight:800;line-height:1.15}.head{flex-wrap:nowrap}.head small{font-size:.7rem;line-height:1.1}
+.tabs{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));padding:6px;border:1px solid var(--line);border-radius:999px;background:var(--card);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 8px 24px rgba(80,70,160,.2)}
+.tabs button{border-radius:999px;box-shadow:none;background:none;color:var(--text)}
+.tabs button.on{background:var(--grad);color:#fff;box-shadow:0 6px 14px rgba(108,99,255,.4)}
+.fab{background:var(--grad);box-shadow:0 8px 22px rgba(108,99,255,.5)}
+.day{background:rgba(255,255,255,.42);border:1px solid rgba(255,255,255,.8);border-radius:22px 22px 22px 8px}
+.day.today{background:var(--today);box-shadow:inset 0 0 0 2px #00b8d9}
+.day.sel{background:linear-gradient(135deg,rgba(0,184,217,.25),rgba(138,107,255,.32));border-color:#8a6bff}
+.ev{border-radius:999px;padding:1px 7px}
+.wcol{background:rgba(255,255,255,.42);border:1px solid rgba(255,255,255,.8);border-radius:26px 26px 26px 8px}
+.col{border-radius:40px 40px 40px 12px;border:1px solid var(--line);box-shadow:0 8px 24px rgba(80,70,160,.12)}
+.t{background:var(--card);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:30px 30px 30px 8px;box-shadow:0 4px 0 rgba(120,110,200,.14)}
+.t.done{opacity:.85}
+.ck{border:3px solid rgba(255,255,255,.95);background:rgba(255,255,255,.65);box-shadow:0 0 14px rgba(255,255,255,.9)}
+.pill{border-radius:999px;background:rgba(255,255,255,.78);color:#2f2a5a}
+.av{box-shadow:0 0 0 3px rgba(255,255,255,.85),0 6px 14px rgba(0,0,0,.12)}
+.item{border-bottom:1px solid var(--line)}
+.ov{background:rgba(30,25,80,.4);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.mb{background:var(--mb);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border-radius:38px 38px 0 0}
+.toast{background:var(--grad);border-radius:999px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before,:root:not([data-theme="light"]) body::after{opacity:.3}}
+:root[data-theme="dark"] body::before,:root[data-theme="dark"] body::after{opacity:.3}
+@media (min-width:800px){#hd{font-size:1.7rem}.tabs{top:12px;left:12px;right:auto;bottom:auto;width:88px;border-radius:44px;border:1px solid var(--line)}.tabs button{border-radius:28px}.mb{border-radius:38px}}
 </style>
 </head>
 <body>
 <div class="head"><h1 id="hd">Gezinsagenda</h1><span id="wx" style="font-weight:800;white-space:nowrap"></span><small id="note"></small><button id="meb" style="min-height:40px;padding:4px 12px" aria-label="Profiel">👤</button><button id="bell" style="min-height:40px;padding:4px 12px" aria-label="Meldingen">🔔</button><button id="th" style="min-height:40px;padding:4px 12px" aria-label="Thema wisselen">🌓</button></div>
 <div id="app"></div>
 <input type="file" id="phfile" accept="image/*" multiple hidden><input type="file" id="avfile" accept="image/*" hidden>
-<div class="note" style="text-align:center;margin:16px 0 90px">Versie 17</div>
+<div class="note" style="text-align:center;margin:16px 0 90px">Versie 18</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 var data={people:[],events:[],tasks:[],items:[],meals:[],rewards:[],feeds:[]},db=null,dirty=false;
@@ -110,7 +147,7 @@ function hits(e,k){if(e.date===k)return true;if(!e.rep||k<e.date)return false;va
   if(e.rep==="y")return a.getDate()===b.getDate()&&a.getMonth()===b.getMonth();
   return false}
 function evs(k){return data.events.filter(function(e){return hits(e,k)&&(!S.who||e.who===S.who)}).concat(EXT.filter(function(e){return e.date===k&&(!S.who||e.who===S.who)})).sort(function(a,b){return (a.time||"").localeCompare(b.time||"")})}
-function chip(e){return '<div class="ev" style="background:'+col(e.who)+'">'+(e.time?esc(e.time)+" ":"")+(e.ext?"📚 ":"")+esc(e.title)+(e.rep?' ↻':'')+'</div>'}
+function chip(e,nt){return '<div class="ev" style="background:'+col(e.who)+'">'+(e.time&&!nt?esc(e.time)+" ":"")+(e.ext?"📚 ":"")+esc(e.title)+(e.rep?' ↻':'')+'</div>'}
 function nopts(a,b,st){var h="";for(var i=a;i<=b;i+=st)h+='<option>'+String(i).padStart(2,"0")+'</option>';return h}
 function opts(){return data.people.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'}).join("")}
 function wk(d){var x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);var y=new Date(Date.UTC(x.getUTCFullYear(),0,1));return Math.ceil(((x-y)/864e5+1)/7)}
@@ -133,12 +170,12 @@ function agenda(){
     var f=new Date(d.getFullYear(),d.getMonth(),1,12),st=new Date(f);st.setDate(1-((f.getDay()+6)%7));
     h+='<div class="grid gm"><div class="dow">wk</div>'+["ma","di","wo","do","vr","za","zo"].map(function(x){return '<div class="dow">'+x+'</div>'}).join("")+'</div><div class="grid gm" style="margin-top:4px">';
     for(var i=0;i<42;i++){var x=new Date(st);x.setDate(st.getDate()+i);var k=iso(x),l=evs(k);if(i%7===0)h+='<div class="wkn">'+wk(x)+'</div>';
-      h+='<div class="day'+(x.getMonth()!==d.getMonth()?" other":"")+(k===today?" today":"")+(k===S.sel?" sel":"")+'" data-a="day" data-k="'+k+'"><b>'+x.getDate()+'</b>'+l.slice(0,2).map(chip).join("")+(l.length>2?'<small>+'+(l.length-2)+'</small>':"")+'</div>'}
+      h+='<div class="day'+(x.getMonth()!==d.getMonth()?" other":"")+(k===today?" today":"")+(k===S.sel?" sel":"")+'" data-a="day" data-k="'+k+'"><b>'+x.getDate()+'</b>'+l.slice(0,2).map(function(e){return chip(e,1)}).join("")+(l.length>2?'<small>+'+(l.length-2)+'</small>':"")+'</div>'}
     h+='</div>'}
   else if(S.view==="week"){
     var m2=mon(S.sel);h+='<div class="scroll"><div class="grid week">';
     for(var j=0;j<7;j++){var y=new Date(m2);y.setDate(m2.getDate()+j);var k2=iso(y);
-      h+='<div class="wcol" style="'+(k2===today?"background:var(--today)":"")+'" data-a="day" data-k="'+k2+'"><b>'+y.toLocaleDateString("nl-NL",{weekday:"short",day:"numeric"})+'</b>'+evs(k2).map(chip).join("")+'</div>'}
+      h+='<div class="wcol" style="'+(k2===today?"background:var(--today)":"")+'" data-a="day" data-k="'+k2+'"><b>'+y.toLocaleDateString("nl-NL",{weekday:"short",day:"numeric"})+'</b>'+evs(k2).map(function(e){return chip(e)}).join("")+'</div>'}
     h+='</div></div>'}
   else{h+=evrows(evs(S.sel))}
   h+='</div>';
@@ -283,8 +320,8 @@ $("app").onclick=function(e){
   render()};
 $("app").onchange=function(e){var t=e.target;if(t.id==="ph"){addPhotos(t.files);return}if(t.dataset.a==="meal"){put("meals",t.dataset.d+"_"+t.dataset.s,{date:t.dataset.d,slot:t.dataset.s,text:t.value.trim()})}};
 document.addEventListener("focusout",function(){if(dirty)setTimeout(function(){if(dirty)render()},400)});
-function theme(m){var r=document.documentElement;if(m==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",m);$("th").textContent=m==="dark"?"🌙":m==="light"?"☀️":"🌓";try{localStorage.setItem("thm",m)}catch(e){}}
-var tm0="auto";try{tm0=localStorage.getItem("thm")||"auto"}catch(e){}
+function theme(m){var r=document.documentElement;if(m==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",m);$("th").textContent=m==="dark"?"🌙":m==="light"?"☀️":"🌓";try{localStorage.setItem("thm2",m)}catch(e){}}
+var tm0="light";try{tm0=localStorage.getItem("thm2")||"light"}catch(e){}
 theme(tm0);
 $("phfile").onchange=function(){var f=Array.from(this.files);this.value="";addPhotos(f)};
 $("avfile").onchange=function(){var f=this.files[0];this.value="";if(f&&avFor)setAvatar(avFor,f)};
