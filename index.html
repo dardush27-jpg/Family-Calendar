@@ -79,12 +79,14 @@ button{border-radius:16px;font-weight:800}
 .cf{position:fixed;top:-20px;width:10px;height:14px;z-index:250;border-radius:2px;animation:fall 2.6s linear forwards;pointer-events:none}
 @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
 .gm{grid-template-columns:28px repeat(7,1fr)}.wkn{display:grid;place-items:center;color:var(--muted);font-size:.8rem;font-weight:800}
+.av{overflow:hidden}.avi{width:100%;height:100%;object-fit:cover;display:block}.chip .avi{width:26px;height:26px;border-radius:50%;vertical-align:middle;display:inline-block}
 </style>
 </head>
 <body>
 <div class="head"><h1 id="hd">Gezinsagenda</h1><span id="wx" style="font-weight:800;white-space:nowrap"></span><small id="note"></small><button id="meb" style="min-height:40px;padding:4px 12px" aria-label="Profiel">👤</button><button id="bell" style="min-height:40px;padding:4px 12px" aria-label="Meldingen">🔔</button><button id="th" style="min-height:40px;padding:4px 12px" aria-label="Thema wisselen">🌓</button></div>
 <div id="app"></div>
-<div class="note" style="text-align:center;margin:16px 0 90px">Versie 16</div>
+<input type="file" id="phfile" accept="image/*" multiple hidden><input type="file" id="avfile" accept="image/*" hidden>
+<div class="note" style="text-align:center;margin:16px 0 90px">Versie 17</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 var data={people:[],events:[],tasks:[],items:[],meals:[],rewards:[],feeds:[]},db=null,dirty=false;
@@ -115,7 +117,7 @@ function wk(d){var x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())
 function mon(k){var x=D(k);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
 function people(){
   var h='<div class="row" style="margin-bottom:10px"><button class="chip'+(S.who?"":" on")+'" data-a="who" data-id="">Iedereen</button>';
-  data.people.forEach(function(p){h+='<button class="chip'+(S.who===p.id?" on":"")+'" data-a="who" data-id="'+esc(p.id)+'">'+esc(p.emoji||"🙂")+' '+esc(p.name)+'</button>'});
+  data.people.forEach(function(p){h+='<button class="chip'+(S.who===p.id?" on":"")+'" data-a="who" data-id="'+esc(p.id)+'">'+av(p)+' '+esc(p.name)+'</button>'});
   h+='<button class="chip" data-a="addp">+ Persoon</button></div>';
   if(S.addp||!data.people.length)h+='<div class="card row"><input class="w" id="pn" placeholder="Naam (bijv. Mama)"><select id="pe">'+"🐶🐱🦊🐸🦁🐼🦄🐯🐰🐵".match(/./gu).map(function(e){return '<option>'+e+'</option>'}).join("")+'</select><input type="color" id="pc" value="#ff7a59"><button class="primary" data-a="savep">Opslaan</button></div>';
   return h}
@@ -161,7 +163,7 @@ function cols(){
   var today=iso(new Date()),yd=new Date();yd.setDate(yd.getDate()-1);var yk=iso(yd),h='<div class="cols">';
   data.people.filter(function(p){return !S.who||p.id===S.who}).forEach(function(p){
     var l=data.tasks.filter(function(t){return t.who===p.id&&(t.daily?dayOk(t):t.date===today)}),n=l.filter(isDone).length;
-    h+='<div class="col" style="background:'+tint(p.color)+'"><div class="ph"><div class="av" style="border:3px solid '+esc(p.color)+'">'+esc(p.emoji||"🙂")+'</div><div><div class="pn">'+esc(p.name)+'</div><span class="pill">✓ '+n+'/'+l.length+'</span> <span class="pill">⭐ '+(p.stars||0)+'</span>'+(p.streak>1&&p.lastFull>=yk?' <span class="pill">🔥 '+p.streak+'</span>':'')+'</div></div>';
+    h+='<div class="col" style="background:'+tint(p.color)+'"><div class="ph"><div class="av" style="border:3px solid '+esc(p.color)+'">'+av(p)+'</div><div><div class="pn">'+esc(p.name)+'</div><span class="pill">✓ '+n+'/'+l.length+'</span> <span class="pill">⭐ '+(p.stars||0)+'</span>'+(p.streak>1&&p.lastFull>=yk?' <span class="pill">🔥 '+p.streak+'</span>':'')+'</div></div>';
     PARTS.forEach(function(pt){var g=l.filter(function(t){return (t.part||"klusjes")===pt[0]});if(!g.length)return;
       h+='<div class="part">'+pt[1]+'</div>'+g.map(function(t){var d=isDone(t);
         return '<div class="t'+(d?" done":"")+'" data-a="tog" data-c="tasks" data-id="'+esc(t.id)+'"><div style="display:flex;align-items:center;gap:12px"><span style="font-size:2.2rem">'+esc(t.emoji||emo(t.title))+'</span><div><div class="tt">'+esc(t.title)+'</div><small>'+(t.daily?dlab(t):"Vandaag")+' · ⭐ '+(t.stars||1)+'</small></div></div>'+(S.edit?'<button class="x" data-a="deltask" data-id="'+esc(t.id)+'">✕</button>':'<div class="ck" style="'+(d?"background:"+esc(p.color)+";border-color:"+esc(p.color):"")+'">'+(d?"✓":"")+'</div>')+'</div>'}).join("")});
@@ -172,7 +174,7 @@ function taken(){
   var h=cols();
   if(S.addt||!data.tasks.length)h='<div class="card"><h2>Nieuwe taak</h2><div class="row"><input class="w" id="tt" placeholder="Bijv. tanden poetsen"><select id="te"><option value="">Auto ✨</option>'+["🪥","🚿","🛁","😴","🛏️","🍽️","🧸","📚","📖","🥣","🛒","🧹","🗑️","🪴","🐶","🐱","🧺","👕","🎒","👟","💇","🏃","⚽","🎹","⭐"].map(function(e){return '<option>'+e+'</option>'}).join("")+'</select><select id="tw">'+opts()+'</select><select id="tp">'+PARTS.map(function(q){return '<option value="'+q[0]+'">'+q[1]+'</option>'}).join("")+'</select><input id="ts" type="number" min="1" value="1" style="width:70px" title="Sterren"><label class="row"><input type="checkbox" id="td" checked style="min-height:auto;width:22px;height:22px"> Herhalen op:</label>'+DAYS.map(function(d){return '<label class="row"><input type="checkbox" class="dd" value="'+d[0]+'" checked style="min-height:auto;width:20px;height:20px">'+d[1]+'</label>'}).join("")+'<button class="primary" data-a="addtask">Toevoegen</button></div></div>'+h;
   h+='<div class="row" style="margin:12px 0"><button data-a="edit">'+(S.edit?"Klaar":"✏️ Bewerken")+'</button></div>';
-  h+='<div class="card"><h2>🎁 Beloningen</h2>'+data.rewards.map(function(r){return '<div class="item"><span>'+esc(r.title)+' · '+r.cost+'⭐</span><span class="row">'+data.people.filter(function(p){return (p.stars||0)>=r.cost}).map(function(p){return '<button class="chip primary" style="background:'+esc(p.color)+'" data-a="redeem" data-p="'+esc(p.id)+'" data-id="'+esc(r.id)+'">'+esc(p.emoji||"🙂")+' '+esc(p.name)+'</button>'}).join("")+'<button class="x" data-a="delrew" data-id="'+esc(r.id)+'">Wis</button></span></div>'}).join("")+'<div class="row" style="margin-top:8px"><input class="w" id="rt" placeholder="Bijv. 30 min tablet"><input id="rc" type="number" min="1" value="5" style="width:80px"><button class="primary" data-a="addrew">+</button></div></div>';
+  h+='<div class="card"><h2>🎁 Beloningen</h2>'+data.rewards.map(function(r){return '<div class="item"><span>'+esc(r.title)+' · '+r.cost+'⭐</span><span class="row">'+data.people.filter(function(p){return (p.stars||0)>=r.cost}).map(function(p){return '<button class="chip primary" style="background:'+esc(p.color)+'" data-a="redeem" data-p="'+esc(p.id)+'" data-id="'+esc(r.id)+'">'+av(p)+' '+esc(p.name)+'</button>'}).join("")+'<button class="x" data-a="delrew" data-id="'+esc(r.id)+'">Wis</button></span></div>'}).join("")+'<div class="row" style="margin-top:8px"><input class="w" id="rt" placeholder="Bijv. 30 min tablet"><input id="rc" type="number" min="1" value="5" style="width:80px"><button class="primary" data-a="addrew">+</button></div></div>';
   return h+'<button class="fab" data-a="fab">+</button>'}
 function lijsten(){
   return ["Boodschappen","To-do"].map(function(n){
@@ -194,7 +196,7 @@ var VAPID="BGU84i0wgnVQOJhqNgejXspGaCwRRDJM3rTIw9-gkqu8-8sQVMf1LssNhNJiNXMKEeqLB
 function b64u(x){var p="=".repeat((4-x.length%4)%4),b=(x+p).replace(/-/g,"+").replace(/_/g,"/"),r=atob(b),o=new Uint8Array(r.length);for(var i=0;i<r.length;i++)o[i]=r.charCodeAt(i);return o}
 async function pushOn(){if(!sb||!("PushManager" in window)||!navigator.serviceWorker)return;try{var reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID)});var s=await sb.auth.getSession();await sb.from("push_subs").upsert({endpoint:sub.endpoint,user_id:s.data.session.user.id,name:me,sub:sub.toJSON()})}catch(e){}}
 function prof(){var m=(window.U&&window.U.user_metadata)||{};
-  return '<div class="card"><h2>👤 Mijn gegevens</h2><div class="row"><input class="w" id="pf" placeholder="Jouw naam (voor meldingen)" value="'+esc(me)+'"><input class="w" id="pc2" placeholder="Plaats (voor het weer)" value="'+esc(m.city||"")+'"><button class="primary" data-a="savepf">Opslaan</button></div><div class="row" style="margin-top:10px"><label class="note">Screensaverfoto’s (alleen dit apparaat): <input type="file" id="ph" accept="image/*" multiple style="min-height:auto"></label><button data-a="clearph">Foto’s wissen</button></div>'+feedsUI()+'<div class="row" style="margin-top:10px"><button data-a="logout">Uitloggen</button></div></div>'}
+  return '<div class="card"><h2>👤 Mijn gegevens</h2><div class="row"><input class="w" id="pf" placeholder="Jouw naam (voor meldingen)" value="'+esc(me)+'"><input class="w" id="pc2" placeholder="Plaats (voor het weer)" value="'+esc(m.city||"")+'"><button class="primary" data-a="savepf">Opslaan</button></div><div class="row" style="margin-top:10px"><span class="note">Screensaver: '+PH.length+' foto’s op dit apparaat</span><button data-a="phpick">📷 Foto’s kiezen</button><button data-a="clearph">Wissen</button><button data-a="sstest">▶ Nu tonen</button></div>'+avUI()+feedsUI()+'<div class="row" style="margin-top:10px"><button data-a="logout">Uitloggen</button></div></div>'}
 async function savePf(){var n=val("pf"),c=val("pc2");if(!sb)return;var md={name:n||me};
   if(c){try{var g=await (await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(c)+"&count=1&language=nl")).json();if(g.results&&g.results[0]){md.city=g.results[0].name;md.lat=g.results[0].latitude;md.lon=g.results[0].longitude}else{note("Plaats niet gevonden");return}}catch(e){note("Plaats zoeken mislukt");return}}
   var r=await sb.auth.updateUser({data:md});if(r.error){note("Opslaan mislukt");return}
@@ -207,7 +209,12 @@ function celebrate(n,s){confetti();ban(n+" heeft alle taken af! +1 bonusster"+(s
 var lastAct=Date.now(),PH=[];
 function pdb(){return new Promise(function(res,rej){var r=indexedDB.open("ga",1);r.onupgradeneeded=function(){r.result.createObjectStore("p",{autoIncrement:true})};r.onsuccess=function(){res(r.result)};r.onerror=rej})}
 async function phAll(){try{var d=await pdb();return await new Promise(function(res){var q=d.transaction("p").objectStore("p").getAll();q.onsuccess=function(){res(q.result)};q.onerror=function(){res([])}})}catch(e){return[]}}
-async function addPhotos(fs){var d=await pdb();for(var i=0;i<fs.length;i++){try{var bm=await createImageBitmap(fs[i]),sc=Math.min(1,1600/Math.max(bm.width,bm.height)),c=document.createElement("canvas");c.width=bm.width*sc;c.height=bm.height*sc;c.getContext("2d").drawImage(bm,0,0,c.width,c.height);var bl=await new Promise(function(r){c.toBlob(r,"image/jpeg",.8)});await new Promise(function(r){var tx=d.transaction("p","readwrite");tx.objectStore("p").add(bl);tx.oncomplete=r})}catch(e){}}PH=await phAll();note(PH.length+" foto’s opgeslagen")}
+var avFor="";
+function av(p){return p.photo&&/^data:image\//.test(p.photo)?'<img class="avi" src="'+p.photo+'">':esc(p.emoji||"🙂")}
+function avUI(){return '<h2 style="margin-top:16px">📷 Foto’s van het gezin</h2>'+(data.people.length?data.people.map(function(p){return '<div class="item"><span class="row"><span class="av" style="width:44px;height:44px;font-size:1.4rem">'+av(p)+'</span>'+esc(p.name)+'</span><span class="row"><button class="x" data-a="avpick" data-id="'+esc(p.id)+'">📷 Foto</button>'+(p.photo?'<button class="x" data-a="avdel" data-id="'+esc(p.id)+'">✕</button>':'')+'</span></div>'}).join(""):'<div class="note">Voeg eerst personen toe.</div>')}
+async function setAvatar(id,f){try{var bm=await createImageBitmap(f),q=Math.min(bm.width,bm.height),c=document.createElement("canvas");c.width=c.height=192;c.getContext("2d").drawImage(bm,(bm.width-q)/2,(bm.height-q)/2,q,q,0,0,192,192);upd("people",id,{photo:c.toDataURL("image/jpeg",.82)})}catch(e){ban("Foto kiezen mislukt","⚠️")}}
+async function addPhotos(fs){var ok=0,bad=0;try{var d=await pdb();for(var i=0;i<fs.length;i++){try{var bm=await createImageBitmap(fs[i]),sc=Math.min(1,1600/Math.max(bm.width,bm.height)),c=document.createElement("canvas");c.width=Math.round(bm.width*sc);c.height=Math.round(bm.height*sc);c.getContext("2d").drawImage(bm,0,0,c.width,c.height);var bl=await new Promise(function(r){c.toBlob(r,"image/jpeg",.8)});await new Promise(function(r,j){var tx=d.transaction("p","readwrite");tx.objectStore("p").add(bl);tx.oncomplete=r;tx.onerror=j});ok++}catch(e){bad++}}
+    PH=await phAll();ban(ok+" foto’s toegevoegd"+(bad?" ("+bad+" mislukt)":"")+" · totaal "+PH.length,"🖼️");if(S.prof)render()}catch(e){ban("Foto’s opslaan mislukt","⚠️")}}
 async function clearPh(){var d=await pdb();d.transaction("p","readwrite").objectStore("p").clear();PH=[];note("Foto’s gewist")}
 function night(){var h=new Date().getHours();return h>=22||h<6}
 function ssStart(){if($("ss"))return;var o=document.createElement("div");o.id="ss";o.innerHTML='<img id="ssi"><div id="ssc"></div>';o.onclick=ssStop;document.body.appendChild(o);var i=0,urls=PH.map(function(b){return URL.createObjectURL(b)});
@@ -267,6 +274,10 @@ $("app").onclick=function(e){
   else if(a==="logout"){if(sb)sb.auth.signOut().then(function(){location.reload()});return}
   else if(a==="addfeed"){var fu=val("fu"),fn=val("fn");if(!fu||!/^(https?|webcal):/i.test(fu)){note("Plak een geldige iCal-link");return}add("feeds",{name:fn||"Agenda",url:fu.replace(/^webcal:/i,"https:"),who:val("fw")});extKey=""}
   else if(a==="delfeed"){del("feeds",t.dataset.id);extKey=""}
+  else if(a==="phpick"){$("phfile").click();return}
+  else if(a==="avpick"){avFor=t.dataset.id;$("avfile").click();return}
+  else if(a==="avdel"){upd("people",t.dataset.id,{photo:""});return}
+  else if(a==="sstest"){if(!PH.length){ban("Kies eerst foto’s","🖼️");return}S.prof=false;render();ssStart();return}
   else if(a==="additem"){var l=t.dataset.l,tx=val("li-"+l);if(!tx)return;add("items",{list:l,text:tx,done:false})}
   else if(a==="delitem")del("items",t.dataset.id);
   render()};
@@ -275,6 +286,8 @@ document.addEventListener("focusout",function(){if(dirty)setTimeout(function(){i
 function theme(m){var r=document.documentElement;if(m==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",m);$("th").textContent=m==="dark"?"🌙":m==="light"?"☀️":"🌓";try{localStorage.setItem("thm",m)}catch(e){}}
 var tm0="auto";try{tm0=localStorage.getItem("thm")||"auto"}catch(e){}
 theme(tm0);
+$("phfile").onchange=function(){var f=Array.from(this.files);this.value="";addPhotos(f)};
+$("avfile").onchange=function(){var f=this.files[0];this.value="";if(f&&avFor)setAvatar(avFor,f)};
 $("th").onclick=function(){var c=document.documentElement.getAttribute("data-theme")||"auto";theme(c==="auto"?"light":c==="light"?"dark":"auto")};
 function bellUpd(){var b=$("bell");if(!window.Notification){b.style.display="none";return}b.textContent=Notification.permission==="granted"?"🔔":"🔕"}
 $("bell").onclick=function(){if(window.Notification&&Notification.permission!=="granted")Notification.requestPermission().then(function(){bellUpd();pushOn()});else ban("Meldingen staan aan")};
