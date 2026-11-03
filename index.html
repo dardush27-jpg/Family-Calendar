@@ -117,16 +117,21 @@ input,select{background:var(--bg);color:var(--text);border:1px solid var(--line)
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before,:root:not([data-theme="light"]) body::after{opacity:.3}}
 :root[data-theme="dark"] body::before,:root[data-theme="dark"] body::after{opacity:.3}
 @media (min-width:800px){#hd{font-size:1.7rem}.tabs{top:12px;left:12px;right:auto;bottom:auto;width:88px;border-radius:44px;border:1px solid var(--line)}.tabs button{border-radius:28px}.mb{border-radius:38px}}
+.gi{cursor:pointer}.gie{font-size:1.9rem}.gr{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px}
+.gt{display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:24px;padding:8px 2px;min-height:78px}.gt span{font-size:2rem;line-height:1}.gt small{font-size:.68rem;font-weight:700}
+.goal{margin:6px 4px 0;font-size:.85rem}.gb{height:10px;border-radius:9px;background:rgba(0,0,0,.1);overflow:hidden;margin-top:4px}.gb i{display:block;height:100%;background:var(--grad)}
+.t.pend{outline:3px dashed #f5b700;outline-offset:-3px}
+.kid .po,.kid [data-a=delev],.kid [data-a=editev],.kid [data-a=edit],.kid [data-a=fab],.kid [data-a=delrew],.kid [data-a=redeem],.kid [data-a=deltask],.kid [data-a=addp]{display:none!important}
 </style>
 </head>
 <body>
-<div class="head"><h1 id="hd">Gezinsagenda</h1><span id="wx" style="font-weight:800;white-space:nowrap"></span><small id="note"></small><button id="meb" style="min-height:40px;padding:4px 12px" aria-label="Profiel">👤</button><button id="bell" style="min-height:40px;padding:4px 12px" aria-label="Meldingen">🔔</button><button id="th" style="min-height:40px;padding:4px 12px" aria-label="Thema wisselen">🌓</button></div>
+<div class="head"><h1 id="hd">Gezinsagenda</h1><span id="wx" style="font-weight:800;white-space:nowrap"></span><small id="note"></small><button id="lk" style="min-height:40px;padding:4px 12px" aria-label="Ouderstand">🔓</button><button id="meb" style="min-height:40px;padding:4px 12px" aria-label="Profiel">👤</button><button id="bell" style="min-height:40px;padding:4px 12px" aria-label="Meldingen">🔔</button><button id="th" style="min-height:40px;padding:4px 12px" aria-label="Thema wisselen">🌓</button></div>
 <div id="app"></div>
-<input type="file" id="phfile" accept="image/*" multiple hidden><input type="file" id="avfile" accept="image/*" hidden>
-<div class="note" style="text-align:center;margin:16px 0 90px">Versie 18</div>
+<input type="file" id="phfile" accept="image/*" multiple hidden><input type="file" id="avfile" accept="image/*" hidden><input type="file" id="rsfile" accept=".json,application/json" hidden>
+<div class="note" style="text-align:center;margin:16px 0 90px">Versie 19</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
-var data={people:[],events:[],tasks:[],items:[],meals:[],rewards:[],feeds:[]},db=null,dirty=false;
+var data={people:[],events:[],tasks:[],items:[],meals:[],rewards:[],feeds:[],settings:[]},db=null,dirty=false;
 var S={tab:"agenda",view:"maand",sel:iso(new Date()),who:"",addp:false};
 function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
 function D(k){return new Date(k+"T12:00:00")}
@@ -146,8 +151,8 @@ function hits(e,k){if(e.date===k)return true;if(!e.rep||k<e.date)return false;va
   if(e.rep==="m")return a.getDate()===b.getDate();
   if(e.rep==="y")return a.getDate()===b.getDate()&&a.getMonth()===b.getMonth();
   return false}
-function evs(k){return data.events.filter(function(e){return hits(e,k)&&(!S.who||e.who===S.who)}).concat(EXT.filter(function(e){return e.date===k&&(!S.who||e.who===S.who)})).sort(function(a,b){return (a.time||"").localeCompare(b.time||"")})}
-function chip(e,nt){return '<div class="ev" style="background:'+col(e.who)+'">'+(e.time&&!nt?esc(e.time)+" ":"")+(e.ext?"📚 ":"")+esc(e.title)+(e.rep?' ↻':'')+'</div>'}
+function evs(k){return data.events.filter(function(e){return hits(e,k)&&(!S.who||e.who===S.who)}).concat(EXT.filter(function(e){return e.date===k&&(!S.who||e.who===S.who)})).concat(S.who?[]:holEv(k)).sort(function(a,b){return (a.time||"").localeCompare(b.time||"")})}
+function chip(e,nt){return '<div class="ev" style="background:'+(e.ic?"#f0a500":col(e.who))+'">'+(e.time&&!nt?esc(e.time)+" ":"")+(e.ext?(e.ic||"📚")+" ":"")+esc(e.title)+(e.rep?' ↻':'')+'</div>'}
 function nopts(a,b,st){var h="";for(var i=a;i<=b;i+=st)h+='<option>'+String(i).padStart(2,"0")+'</option>';return h}
 function opts(){return data.people.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'}).join("")}
 function wk(d){var x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var n=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-n);var y=new Date(Date.UTC(x.getUTCFullYear(),0,1));return Math.ceil(((x-y)/864e5+1)/7)}
@@ -159,7 +164,7 @@ function people(){
   if(S.addp||!data.people.length)h+='<div class="card row"><input class="w" id="pn" placeholder="Naam (bijv. Mama)"><select id="pe">'+"🐶🐱🦊🐸🦁🐼🦄🐯🐰🐵".match(/./gu).map(function(e){return '<option>'+e+'</option>'}).join("")+'</select><input type="color" id="pc" value="#ff7a59"><button class="primary" data-a="savep">Opslaan</button></div>';
   return h}
 function agenda(){
-  var h='<div class="row" style="margin-bottom:10px">'+["dag","week","maand"].map(function(v){return '<button class="'+(S.view===v?"on":"")+'" data-a="view" data-v="'+v+'">'+v+'</button>'}).join("")+'</div><div class="card"><div class="head"><button data-a="nav" data-n="-1">‹</button>';
+  var h=cdBar()+'<div class="row po" style="margin-bottom:10px"><input class="w" id="qa" placeholder="Snel toevoegen: zwemmen morgen 16:30"><button class="primary" data-a="qa">+</button></div><div class="row" style="margin-bottom:10px">'+["dag","week","maand"].map(function(v){return '<button class="'+(S.view===v?"on":"")+'" data-a="view" data-v="'+v+'">'+v+'</button>'}).join("")+'</div><div class="card"><div class="head"><button data-a="nav" data-n="-1">‹</button>';
   var d=D(S.sel),t;
   if(S.view==="maand")t=d.toLocaleDateString("nl-NL",{month:"long",year:"numeric"});
   else if(S.view==="week"){var m=mon(S.sel),e=new Date(m);e.setDate(m.getDate()+6);t="Week "+wk(m)+" · "+m.getDate()+" – "+e.toLocaleDateString("nl-NL",{day:"numeric",month:"long"})}
@@ -180,12 +185,12 @@ function agenda(){
   else{h+=evrows(evs(S.sel))}
   h+='</div>';
   if(S.view!=="dag"){var l3=evs(S.sel);if(l3.length)h+='<div class="card"><h2>'+D(S.sel).toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"})+'</h2>'+evrows(l3)+'</div>'}
-  if(S.view==="dag")h+='<div class="card">'+evform()+'</div>';
+  if(S.view==="dag"&&!isKid())h+='<div class="card">'+evform()+'</div>';
   if(S.modal&&S.view!=="dag")h+=modal();
   return h}
-function evform(){var e=S.eid?data.events.find(function(x){return x.id===S.eid}):null;e=e||{};
-  return '<h2>'+(e.id?"Afspraak aanpassen":"Nieuwe afspraak")+'</h2><div class="row"><input class="w" id="et" placeholder="Wat" value="'+esc(e.title||"")+'"><input type="date" id="ed" value="'+(e.date||S.sel)+'"><select id="eh"><option value="">Uur</option>'+nopts(0,23,1)+'</select><select id="em"><option value="">Min</option>'+nopts(0,55,5)+'</select><select id="ew">'+opts()+'</select><select id="er"><option value="">Eenmalig</option><option value="d">Elke dag</option><option value="w">Elke week</option><option value="m">Elke maand</option><option value="y">Elk jaar</option></select><button class="primary" data-a="saveev">'+(e.id?"Opslaan":"Toevoegen")+'</button>'+(e.id?'<button data-a="cancelev">Annuleer</button>':'')+'</div>'}
-function fillev(){if(!S.eid||!$("et"))return;var e=data.events.find(function(x){return x.id===S.eid});if(!e)return;var t=(e.time||"").split(":");$("eh").value=t[0]||"";$("em").value=t[1]||"";$("ew").value=e.who||"";$("er").value=e.rep||""}
+function evform(){if(isKid())return "";var e=S.eid?data.events.find(function(x){return x.id===S.eid}):null;e=e||{};
+  return '<h2>'+(e.id?"Afspraak aanpassen":"Nieuwe afspraak")+'</h2><div class="row"><input class="w" id="et" placeholder="Wat" value="'+esc(e.title||"")+'"><input type="date" id="ed" value="'+(e.date||S.sel)+'"><select id="eh"><option value="">Uur</option>'+nopts(0,23,1)+'</select><select id="em"><option value="">Min</option>'+nopts(0,55,5)+'</select><select id="ew">'+opts()+'</select><select id="er"><option value="">Eenmalig</option><option value="d">Elke dag</option><option value="w">Elke week</option><option value="m">Elke maand</option><option value="y">Elk jaar</option></select><label class="row"><input type="checkbox" id="ecd" style="min-height:auto;width:20px;height:20px"> ⏳ Aftellen</label><button class="primary" data-a="saveev">'+(e.id?"Opslaan":"Toevoegen")+'</button>'+(e.id?'<button data-a="cancelev">Annuleer</button>':'')+'</div>'}
+function fillev(){if(!S.eid||!$("et"))return;var e=data.events.find(function(x){return x.id===S.eid});if(!e)return;var t=(e.time||"").split(":");$("eh").value=t[0]||"";$("em").value=t[1]||"";$("ew").value=e.who||"";$("er").value=e.rep||"";$("ecd").checked=!!e.cd}
 function evrows(l){var R={d:"elke dag",w:"elke week",m:"elke maand",y:"elk jaar"};return l.length?l.map(function(e){return '<div class="item bar" style="border-color:'+col(e.who)+'"><div>'+esc(e.title)+(e.rep?" ↻":"")+'<br><small>'+(e.time?esc(e.time):"hele dag")+(e.who?" · "+esc(pname(e.who)):"")+(e.rep?" · "+R[e.rep]:"")+'</small></div>'+(e.ext?'<small>🔗 '+esc(e.src||"")+'</small>':'<span class="row"><button class="x" data-a="editev" data-id="'+esc(e.id)+'">✏️</button><button class="x" data-a="delev" data-id="'+esc(e.id)+'">Wis</button></span>')+'</div>'}).join(""):'<div class="note">Niets gepland op deze dag.</div>'}
 function modal(){return '<div class="ov" data-a="close"><div class="mb" data-a="noop"><div class="head"><h2 style="text-align:left">'+D(S.sel).toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"})+'</h2><button data-a="close">✕</button></div>'+evrows(evs(S.sel))+'<div style="margin-top:14px">'+evform()+'</div></div></div>'}
 var DAYS=[[1,"ma"],[2,"di"],[3,"wo"],[4,"do"],[5,"vr"],[6,"za"],[0,"zo"]];
@@ -201,22 +206,31 @@ function cols(){
   data.people.filter(function(p){return !S.who||p.id===S.who}).forEach(function(p){
     var l=data.tasks.filter(function(t){return t.who===p.id&&(t.daily?dayOk(t):t.date===today)}),n=l.filter(isDone).length;
     h+='<div class="col" style="background:'+tint(p.color)+'"><div class="ph"><div class="av" style="border:3px solid '+esc(p.color)+'">'+av(p)+'</div><div><div class="pn">'+esc(p.name)+'</div><span class="pill">✓ '+n+'/'+l.length+'</span> <span class="pill">⭐ '+(p.stars||0)+'</span>'+(p.streak>1&&p.lastFull>=yk?' <span class="pill">🔥 '+p.streak+'</span>':'')+'</div></div>';
-    PARTS.forEach(function(pt){var g=l.filter(function(t){return (t.part||"klusjes")===pt[0]});if(!g.length)return;
-      h+='<div class="part">'+pt[1]+'</div>'+g.map(function(t){var d=isDone(t);
-        return '<div class="t'+(d?" done":"")+'" data-a="tog" data-c="tasks" data-id="'+esc(t.id)+'"><div style="display:flex;align-items:center;gap:12px"><span style="font-size:2.2rem">'+esc(t.emoji||emo(t.title))+'</span><div><div class="tt">'+esc(t.title)+'</div><small>'+(t.daily?dlab(t):"Vandaag")+' · ⭐ '+(t.stars||1)+'</small></div></div>'+(S.edit?'<button class="x" data-a="deltask" data-id="'+esc(t.id)+'">✕</button>':'<div class="ck" style="'+(d?"background:"+esc(p.color)+";border-color:"+esc(p.color):"")+'">'+(d?"✓":"")+'</div>')+'</div>'}).join("")});
+    h+=goal(p);PARTS.forEach(function(pt){var g=l.filter(function(t){return (t.part||"klusjes")===pt[0]});if(!g.length)return;
+      h+='<div class="part">'+pt[1]+'</div>'+g.map(function(t){var d=isDone(t),pd=!d&&t.pend===today;
+        return '<div class="t'+(d?" done":pd?" pend":"")+'" data-a="tog" data-c="tasks" data-id="'+esc(t.id)+'"><div style="display:flex;align-items:center;gap:12px"><span style="font-size:2.2rem">'+esc(t.emoji||emo(t.title))+'</span><div><div class="tt">'+esc(t.title)+'</div><small>'+(t.daily?dlab(t):"Vandaag")+' · ⭐ '+(t.stars||1)+(pd?' · ⏳ wacht op ouder':'')+'</small></div></div>'+(S.edit?'<button class="x" data-a="deltask" data-id="'+esc(t.id)+'">✕</button>':'<div class="ck" style="'+(d?"background:"+esc(p.color)+";border-color:"+esc(p.color):"")+'">'+(d?"✓":pd?"⏳":"")+'</div>')+(pd?'<button class="x po" data-a="rej" data-id="'+esc(t.id)+'">✗</button>':'')+'</div>'}).join("")});
     if(!l.length)h+='<div class="note">Nog geen taken. Tik op + om er een toe te voegen.</div>';
     h+='</div>'});
   return h+'</div>'}
 function taken(){
   var h=cols();
-  if(S.addt||!data.tasks.length)h='<div class="card"><h2>Nieuwe taak</h2><div class="row"><input class="w" id="tt" placeholder="Bijv. tanden poetsen"><select id="te"><option value="">Auto ✨</option>'+["🪥","🚿","🛁","😴","🛏️","🍽️","🧸","📚","📖","🥣","🛒","🧹","🗑️","🪴","🐶","🐱","🧺","👕","🎒","👟","💇","🏃","⚽","🎹","⭐"].map(function(e){return '<option>'+e+'</option>'}).join("")+'</select><select id="tw">'+opts()+'</select><select id="tp">'+PARTS.map(function(q){return '<option value="'+q[0]+'">'+q[1]+'</option>'}).join("")+'</select><input id="ts" type="number" min="1" value="1" style="width:70px" title="Sterren"><label class="row"><input type="checkbox" id="td" checked style="min-height:auto;width:22px;height:22px"> Herhalen op:</label>'+DAYS.map(function(d){return '<label class="row"><input type="checkbox" class="dd" value="'+d[0]+'" checked style="min-height:auto;width:20px;height:20px">'+d[1]+'</label>'}).join("")+'<button class="primary" data-a="addtask">Toevoegen</button></div></div>'+h;
+  if((S.addt||!data.tasks.length)&&!isKid())h='<div class="card"><h2>Nieuwe taak</h2><div class="row"><input class="w" id="tt" placeholder="Bijv. tanden poetsen"><select id="te"><option value="">Auto ✨</option>'+["🪥","🚿","🛁","😴","🛏️","🍽️","🧸","📚","📖","🥣","🛒","🧹","🗑️","🪴","🐶","🐱","🧺","👕","🎒","👟","💇","🏃","⚽","🎹","⭐"].map(function(e){return '<option>'+e+'</option>'}).join("")+'</select><select id="tw">'+opts()+'</select><select id="tp">'+PARTS.map(function(q){return '<option value="'+q[0]+'">'+q[1]+'</option>'}).join("")+'</select><input id="ts" type="number" min="1" value="1" style="width:70px" title="Sterren"><label class="row"><input type="checkbox" id="td" checked style="min-height:auto;width:22px;height:22px"> Herhalen op:</label>'+DAYS.map(function(d){return '<label class="row"><input type="checkbox" class="dd" value="'+d[0]+'" checked style="min-height:auto;width:20px;height:20px">'+d[1]+'</label>'}).join("")+'<button class="primary" data-a="addtask">Toevoegen</button></div></div>'+h;
   h+='<div class="row" style="margin:12px 0"><button data-a="edit">'+(S.edit?"Klaar":"✏️ Bewerken")+'</button></div>';
-  h+='<div class="card"><h2>🎁 Beloningen</h2>'+data.rewards.map(function(r){return '<div class="item"><span>'+esc(r.title)+' · '+r.cost+'⭐</span><span class="row">'+data.people.filter(function(p){return (p.stars||0)>=r.cost}).map(function(p){return '<button class="chip primary" style="background:'+esc(p.color)+'" data-a="redeem" data-p="'+esc(p.id)+'" data-id="'+esc(r.id)+'">'+av(p)+' '+esc(p.name)+'</button>'}).join("")+'<button class="x" data-a="delrew" data-id="'+esc(r.id)+'">Wis</button></span></div>'}).join("")+'<div class="row" style="margin-top:8px"><input class="w" id="rt" placeholder="Bijv. 30 min tablet"><input id="rc" type="number" min="1" value="5" style="width:80px"><button class="primary" data-a="addrew">+</button></div></div>';
+  h+='<div class="card"><h2>🎁 Beloningen</h2>'+data.rewards.map(function(r){return '<div class="item"><span>'+esc(r.title)+' · '+r.cost+'⭐</span><span class="row">'+data.people.filter(function(p){return (p.stars||0)>=r.cost}).map(function(p){return '<button class="chip primary" style="background:'+esc(p.color)+'" data-a="redeem" data-p="'+esc(p.id)+'" data-id="'+esc(r.id)+'">'+av(p)+' '+esc(p.name)+'</button>'}).join("")+'<button class="x" data-a="delrew" data-id="'+esc(r.id)+'">Wis</button></span></div>'}).join("")+'<div class="row po" style="margin-top:8px"><input class="w" id="rt" placeholder="Bijv. 30 min tablet"><input id="rc" type="number" min="1" value="5" style="width:80px"><button class="primary" data-a="addrew">+</button></div></div>';
   return h+'<button class="fab" data-a="fab">+</button>'}
-function lijsten(){
-  return ["Boodschappen","To-do"].map(function(n){
-    var l=data.items.filter(function(i){return i.list===n});
-    return '<div class="card"><h2>'+n+'</h2>'+l.map(function(i){return '<div class="item'+(i.done?" done":"")+'"><div class="row"><button class="chk'+(i.done?" on":"")+'" data-a="tog" data-c="items" data-id="'+esc(i.id)+'">'+(i.done?"✓":"")+'</button><span>'+esc(i.text)+'</span></div><button class="x" data-a="delitem" data-id="'+esc(i.id)+'">Wis</button></div>'}).join("")+'<div class="row" style="margin-top:8px"><input class="w" id="li-'+n+'" placeholder="Toevoegen…"><button class="primary" data-a="additem" data-l="'+n+'">+</button></div></div>'}).join("")}
+var GR=[["🥦 Groente & fruit",[["🥦","Broccoli"],["🥕","Wortelen"],["🍅","Tomaten"],["🥒","Komkommer"],["🥔","Aardappels"],["🧅","Uien"],["🥬","Sla"],["🌽","Mais"],["🍌","Bananen"],["🍎","Appels"],["🍐","Peren"],["🍊","Mandarijnen"],["🍇","Druiven"],["🍓","Aardbeien"],["🍋","Citroen"],["🥑","Avocado"]]],
+["🍞 Brood & zuivel",[["🍞","Brood"],["🥐","Croissants"],["🧀","Kaas"],["🥚","Eieren"],["🥛","Melk"],["🧈","Boter"],["🍦","Yoghurt"],["🥣","Muesli"]]],
+["🍗 Vlees & vis",[["🍗","Kip"],["🥩","Vlees"],["🐟","Vis"],["🥓","Spek"],["🌭","Worstjes"]]],
+["🍝 Maaltijd",[["🍝","Pasta"],["🍚","Rijst"],["🍕","Pizza"],["🥫","Soep"],["🍟","Friet"],["🌮","Wraps"]]],
+["🍪 Snoep & drinken",[["🍫","Chocola"],["🍪","Koekjes"],["🧃","Sap"],["💧","Water"],["☕","Koffie"],["🍵","Thee"]]],
+["🧻 Huishouden",[["🧻","Wc-papier"],["🧼","Zeep"],["🪥","Tandpasta"],["🧴","Shampoo"],["🧽","Afwasmiddel"],["🧺","Wasmiddel"]]]];
+function lijsten(){var h='';
+  ["Boodschappen","To-do"].forEach(function(n){
+    var l=data.items.filter(function(i){return i.list===n}).sort(function(a,b){return (a.done?1:0)-(b.done?1:0)});
+    h+='<div class="card"><h2>'+(n==="Boodschappen"?"🛒 ":"✅ ")+n+'</h2>'+(l.length?l.map(function(i){return '<div class="item gi'+(i.done?" done":"")+'" data-a="tog" data-c="items" data-id="'+esc(i.id)+'"><div class="row"><span class="ck" style="'+(i.done?"background:#2fd39a;border-color:#2fd39a":"")+'">'+(i.done?"✓":"")+'</span><span class="gie">'+esc(i.icon||(n==="Boodschappen"?"🛒":"•"))+'</span><b>'+esc(i.text)+(i.qty>1?" ×"+i.qty:"")+'</b></div><button class="x" data-a="delitem" data-id="'+esc(i.id)+'">✕</button></div>'}).join("")+(l.some(function(i){return i.done})?'<button class="x" style="margin-top:8px" data-a="gclear" data-l="'+n+'">🗑️ Afgevinkte wissen</button>':""):'<div class="note">Nog niets op de lijst.</div>');
+    if(n==="Boodschappen")h+='<h2 style="margin-top:14px">Tik op een plaatje</h2>'+GR.map(function(g){return '<div class="part">'+g[0]+'</div><div class="gr">'+g[1].map(function(x){return '<button class="gt" data-a="gadd" data-e="'+x[0]+'" data-n="'+x[1]+'"><span>'+x[0]+'</span><small>'+x[1]+'</small></button>'}).join("")+'</div>'}).join("");
+    h+='<div class="row" style="margin-top:10px"><input class="w" id="li-'+n+'" placeholder="'+(n==="Boodschappen"?"Of typ zelf een product…":"Toevoegen…")+'"><button class="primary" data-a="additem" data-l="'+n+'">+</button></div></div>'});
+  return h}
 function eten(){
   var m=mon(S.sel),h='<div class="card"><div class="head"><button data-a="nav" data-n="-1">‹</button><h2>Maaltijden deze week</h2><button data-a="nav" data-n="1">›</button></div>';
   for(var j=0;j<7;j++){var y=new Date(m);y.setDate(m.getDate()+j);var k=iso(y);
@@ -228,12 +242,12 @@ function eten(){
 function wall(){
   var today=iso(new Date()),tm=new Date();tm.setDate(tm.getDate()+1);
   function rows(l){return l.length?l.map(function(e){return '<div class="item bar" style="border-color:'+col(e.who)+'"><div class="big">'+(e.time?'<b>'+esc(e.time)+'</b> ':'')+esc(e.title)+' <small>'+esc(pname(e.who))+'</small></div></div>'}).join(""):'<div class="note">Niets gepland.</div>'}
-  return '<div class="card row" style="align-items:flex-start"><div style="flex:1;min-width:220px"><h2>Vandaag</h2>'+rows(evs(today))+'</div><div style="flex:1;min-width:220px"><h2>Morgen</h2>'+rows(evs(iso(tm)))+'</div></div>'+cols()}
+  return cdBar()+'<div class="card row" style="align-items:flex-start"><div style="flex:1;min-width:220px"><h2>Vandaag</h2>'+rows(evs(today))+'</div><div style="flex:1;min-width:220px"><h2>Morgen</h2>'+rows(evs(iso(tm)))+'</div></div>'+cols()}
 var VAPID="BGU84i0wgnVQOJhqNgejXspGaCwRRDJM3rTIw9-gkqu8-8sQVMf1LssNhNJiNXMKEeqLBe5JCezevQKqVd6DqT8";
 function b64u(x){var p="=".repeat((4-x.length%4)%4),b=(x+p).replace(/-/g,"+").replace(/_/g,"/"),r=atob(b),o=new Uint8Array(r.length);for(var i=0;i<r.length;i++)o[i]=r.charCodeAt(i);return o}
 async function pushOn(){if(!sb||!("PushManager" in window)||!navigator.serviceWorker)return;try{var reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID)});var s=await sb.auth.getSession();await sb.from("push_subs").upsert({endpoint:sub.endpoint,user_id:s.data.session.user.id,name:me,sub:sub.toJSON()})}catch(e){}}
 function prof(){var m=(window.U&&window.U.user_metadata)||{};
-  return '<div class="card"><h2>👤 Mijn gegevens</h2><div class="row"><input class="w" id="pf" placeholder="Jouw naam (voor meldingen)" value="'+esc(me)+'"><input class="w" id="pc2" placeholder="Plaats (voor het weer)" value="'+esc(m.city||"")+'"><button class="primary" data-a="savepf">Opslaan</button></div><div class="row" style="margin-top:10px"><span class="note">Screensaver: '+PH.length+' foto’s op dit apparaat</span><button data-a="phpick">📷 Foto’s kiezen</button><button data-a="clearph">Wissen</button><button data-a="sstest">▶ Nu tonen</button></div>'+avUI()+feedsUI()+'<div class="row" style="margin-top:10px"><button data-a="logout">Uitloggen</button></div></div>'}
+  return '<div class="card"><h2>👤 Mijn gegevens</h2><div class="row"><input class="w" id="pf" placeholder="Jouw naam (voor meldingen)" value="'+esc(me)+'"><input class="w" id="pc2" placeholder="Plaats (voor het weer)" value="'+esc(m.city||"")+'"><button class="primary" data-a="savepf">Opslaan</button></div><div class="row" style="margin-top:10px"><span class="note">Screensaver: '+PH.length+' foto’s op dit apparaat</span><button data-a="phpick">📷 Foto’s kiezen</button><button data-a="clearph">Wissen</button><button data-a="sstest">▶ Nu tonen</button></div>'+secUI()+avUI()+feedsUI()+'<div class="row" style="margin-top:10px"><button data-a="logout">Uitloggen</button></div></div>'}
 async function savePf(){var n=val("pf"),c=val("pc2");if(!sb)return;var md={name:n||me};
   if(c){try{var g=await (await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(c)+"&count=1&language=nl")).json();if(g.results&&g.results[0]){md.city=g.results[0].name;md.lat=g.results[0].latitude;md.lon=g.results[0].longitude}else{note("Plaats niet gevonden");return}}catch(e){note("Plaats zoeken mislukt");return}}
   var r=await sb.auth.updateUser({data:md});if(r.error){note("Opslaan mislukt");return}
@@ -259,7 +273,8 @@ function ssStart(){if($("ss"))return;var o=document.createElement("div");o.id="s
   function nxt(){var nt=night();o.className=nt?"dim":"";var im=$("ssi");if(!urls.length||nt){im.style.display="none";return}im.style.display="block";im.src=urls[i++%urls.length]}
   clk();nxt();o._a=setInterval(clk,1000);o._b=setInterval(nxt,12000)}
 function ssStop(){var o=$("ss");if(o){clearInterval(o._a);clearInterval(o._b);o.remove()}lastAct=Date.now()}
-document.addEventListener("pointerdown",function(){if(!$("ss"))lastAct=Date.now()},true);
+document.addEventListener("pointerdown",function(){if(!$("ss"))lastAct=Date.now();if(unl>Date.now())unl=Date.now()+300000},true);
+var lastK=null;setInterval(function(){var k=isKid();if(lastK!==null&&k!==lastK)render();lastK=k},3000);
 setInterval(function(){if(!$("ss")&&Date.now()-lastAct>180000&&(PH.length||night()))ssStart()},5000);
 phAll().then(function(a){PH=a});
 var EXT=[],extKey="",extAt=0;
@@ -270,12 +285,49 @@ function extLoad(){if(!sb||!db)return;
   var key=iso(a)+data.feeds.map(function(f){return f.id}).join();
   if(key===extKey&&Date.now()-extAt<6e5)return;extKey=key;extAt=Date.now();
   sb.auth.getSession().then(function(s){var tk=s.data.session&&s.data.session.access_token;return fetch(SUPABASE_URL+"/functions/v1/Ics?from="+iso(a)+"&to="+iso(b)+"&token="+encodeURIComponent(tk))}).then(function(r){return r.text().then(function(tx){var j=null;try{j=JSON.parse(tx)}catch(e){}return{st:r.status,j:j,tx:tx}})}).then(function(x){if(x.st!==200||!x.j){note("Schoolagenda: serverfout "+x.st+" "+(x.tx||"").slice(0,100));extKey="";return}var evl=x.j.events||[];note(x.j.errors&&x.j.errors.length?"Schoolagenda: "+x.j.errors[0]:"Schoolagenda: "+evl.length+" afspraken");EXT=evl.map(function(e){e.ext=true;e.id="x"+e.date+e.title;return e});render()}).catch(function(e){note("Schoolagenda: geen verbinding ("+(e&&e.message||e)+")");extKey=""})}
+var unl=0;
+function pinH(){var p=data.settings.find(function(x){return x.id==="pin"});return p?p.hash:""}
+function isKid(){return !!pinH()&&Date.now()>unl}
+async function sha(x){var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("ga:"+x));return Array.from(new Uint8Array(b)).map(function(v){return v.toString(16).padStart(2,"0")}).join("")}
+function pad(){return '<div class="card"><h2>🔒 Ouderstand</h2><div class="row"><input id="pnp" type="password" inputmode="numeric" maxlength="8" placeholder="Pincode"><button class="primary" data-a="unlock">Ontgrendel</button><button data-a="cancelpin">Annuleer</button></div><div class="note" id="pne"></div></div>'}
+function secUI(){return '<h2 style="margin-top:16px">🔒 Ouderstand en back-up</h2><div class="row"><input id="pin1" type="password" inputmode="numeric" maxlength="8" placeholder="Nieuwe pincode"><button data-a="setpin">Pincode opslaan</button>'+(pinH()?'<button data-a="delpin">Pincode uit</button>':'')+'</div><div class="row" style="margin-top:8px"><button data-a="backup">⬇️ Back-up maken</button><button data-a="restore">⬆️ Terugzetten</button></div>'}
+function goal(p){var s=p.stars||0,nx=data.rewards.filter(function(r){return r.cost>s}).sort(function(a,b){return a.cost-b.cost})[0];if(!nx)return data.rewards.length?'<div class="note" style="margin:6px 4px">🎁 Alle beloningen binnen!</div>':'';return '<div class="goal">🎁 Nog '+(nx.cost-s)+' ⭐ voor <b>'+esc(nx.title)+'</b><div class="gb"><i style="width:'+Math.round(100*s/nx.cost)+'%"></i></div></div>'}
+function cdBar(){var out=[],t0=new Date();t0.setHours(12,0,0,0);
+  data.events.filter(function(e){return e.cd}).forEach(function(e){for(var i=0;i<=120;i++){var d=new Date(t0);d.setDate(d.getDate()+i);if(hits(e,iso(d))){out.push({n:i,t:e.title});break}}});
+  out.sort(function(a,b){return a.n-b.n});
+  return out.length?'<div class="row" style="margin-bottom:10px">'+out.slice(0,4).map(function(o){return '<span class="pill" style="padding:6px 14px">⏳ '+esc(o.t)+': '+(o.n===0?"vandaag! 🎉":o.n===1?"morgen!":"nog "+o.n+" dagen")+'</span>'}).join("")+'</div>':""}
+function qparse(txt){var s=" "+txt.toLowerCase().replace(/,/g," ")+" ",m,dt=new Date(),tm="",rep="",who="",dflt=true;dt.setHours(12,0,0,0);
+  function cut(re){var r=s.match(re);if(r)s=s.replace(re," ");return r}
+  if(cut(/ elke dag /))rep="d";else if(cut(/ elke week /))rep="w";else if(cut(/ elke maand /))rep="m";else if(cut(/ elk jaar /))rep="y";
+  if(m=cut(/ (\d{1,2})[:.](\d{2}) /))tm=("0"+m[1]).slice(-2)+":"+m[2];else if(m=cut(/ om (\d{1,2}) ?(uur|u) /))tm=("0"+m[1]).slice(-2)+":00";
+  var WD=["zondag","maandag","dinsdag","woensdag","donderdag","vrijdag","zaterdag"],MO={jan:0,feb:1,maa:2,mrt:2,apr:3,mei:4,jun:5,jul:6,aug:7,sep:8,okt:9,nov:10,dec:11};
+  if(cut(/ overmorgen /)){dt.setDate(dt.getDate()+2);dflt=false}
+  else if(cut(/ morgen /)){dt.setDate(dt.getDate()+1);dflt=false}
+  else if(cut(/ vandaag /))dflt=false;
+  else if(m=cut(/ (\d{1,2}) (jan|feb|maa|mrt|apr|mei|jun|jul|aug|sep|okt|nov|dec)[a-z]* /)){dt=new Date(dt.getFullYear(),MO[m[2]],+m[1],12);if(dt<new Date(Date.now()-864e5))dt.setFullYear(dt.getFullYear()+1);dflt=false}
+  else if(m=cut(/ (\d{1,2})[-\/](\d{1,2}) /)){dt=new Date(dt.getFullYear(),+m[2]-1,+m[1],12);if(dt<new Date(Date.now()-864e5))dt.setFullYear(dt.getFullYear()+1);dflt=false}
+  else{for(var i=0;i<7;i++)if(cut(new RegExp(" (aanstaande |volgende )?"+WD[i]+" "))){var n=(i-dt.getDay()+7)%7;dt.setDate(dt.getDate()+(n||7));dflt=false;break}}
+  if(dflt)dt=D(S.sel);
+  data.people.forEach(function(p){var re=new RegExp(" "+p.name.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+" ");if(!who&&re.test(s)){who=p.id;s=s.replace(re," ")}});
+  var t=s.replace(/ (om|op) /g," ").replace(/\s+/g," ").trim();
+  return{title:t?t.charAt(0).toUpperCase()+t.slice(1):"",date:iso(dt),time:tm,who:who,rep:rep}}
+var HC={};
+function easter(y){var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=(h+l-7*m+114)%31+1;return new Date(y,mo-1,da,12)}
+function hol(y){if(HC[y])return HC[y];var E=easter(y),o={};function add(d,t){o[iso(d)]=t}function off(n){var x=new Date(E);x.setDate(x.getDate()+n);return x}
+  add(new Date(y,0,1,12),"🎆 Nieuwjaarsdag");add(off(-2),"✝️ Goede Vrijdag");add(E,"🐣 Eerste Paasdag");add(off(1),"🐣 Tweede Paasdag");
+  var k=new Date(y,3,27,12);if(k.getDay()===0)k.setDate(26);add(k,"👑 Koningsdag");add(new Date(y,4,5,12),"🕊️ Bevrijdingsdag");add(off(39),"☁️ Hemelvaartsdag");add(off(49),"🕊️ Eerste Pinksterdag");add(off(50),"🕊️ Tweede Pinksterdag");
+  add(new Date(y,11,5,12),"🎁 Sinterklaas");add(new Date(y,11,25,12),"🎄 Eerste Kerstdag");add(new Date(y,11,26,12),"🎄 Tweede Kerstdag");return HC[y]=o}
+function holEv(k){var t=hol(+k.slice(0,4))[k];return t?[{id:"h"+k,title:t.replace(/^\S+\s/,""),ic:t.split(" ")[0],date:k,time:"",who:"",src:"Feestdag",ext:true}]:[]}
+function backupBk(){var rows=[];Object.keys(data).forEach(function(c){if(c==="feeds")return;data[c].forEach(function(x){var d=Object.assign({},x),id=d.id;delete d.id;rows.push({collection:c,id:id,data:d})})});var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify({v:1,at:new Date().toISOString(),docs:rows})],{type:"application/json"}));a.download="gezinsagenda-backup-"+iso(new Date())+".json";document.body.appendChild(a);a.click();a.remove();ban(rows.length+" items in back-up","⬇️")}
+async function restoreBk(f){try{var j=JSON.parse(await f.text()),rows=(j.docs||[]).filter(function(r){return r.collection&&r.id&&r.collection!=="feeds"});if(!rows.length){ban("Geen geldige back-up","⚠️");return}
+  if(sb&&db){for(var i=0;i<rows.length;i+=200){var r=await sb.from("docs").upsert(rows.slice(i,i+200));if(r.error)throw r.error}await load()}else{rows.forEach(function(r){put(r.collection,r.id,Object.assign({},r.data))})}
+  ban(rows.length+" items teruggezet","⬆️")}catch(e){ban("Terugzetten mislukt","⚠️")}}
 function tick(){var n=new Date();$("hd").textContent=n.toLocaleDateString("nl-NL",{weekday:"short",day:"numeric",month:"short"})+"  "+n.toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"})}
 setInterval(tick,1000);tick();
 function render(){
   dirty=false;
-  document.body.className=S.tab==="wand"?"wm":"";var tabs=[["agenda","Agenda","📅"],["taken","Taken","✅"],["lijsten","Lijsten","🛒"],["eten","Eten","🍽️"],["wand","Wand","🖼️"]];
-  $("app").innerHTML=(S.prof?prof():"")+(S.tab==="wand"?"":people())+'<div class="tabs">'+tabs.map(function(t){return '<button class="'+(S.tab===t[0]?"on":"")+'" data-a="tab" data-t="'+t[0]+'"><b>'+t[2]+'</b>'+t[1]+'</button>'}).join("")+'</div>'+({agenda:agenda,taken:taken,lijsten:lijsten,eten:eten,wand:wall})[S.tab]();fillev();extLoad();
+  document.body.className=(S.tab==="wand"?"wm ":"")+(isKid()?"kid":"");$("lk").textContent=isKid()?"🔒":"🔓";var tabs=[["agenda","Agenda","📅"],["taken","Taken","✅"],["lijsten","Lijsten","🛒"],["eten","Eten","🍽️"],["wand","Wand","🖼️"]];
+  $("app").innerHTML=(S.pinpad&&isKid()?pad():"")+(S.prof&&!isKid()?prof():"")+(S.tab==="wand"?"":people())+'<div class="tabs">'+tabs.map(function(t){return '<button class="'+(S.tab===t[0]?"on":"")+'" data-a="tab" data-t="'+t[0]+'"><b>'+t[2]+'</b>'+t[1]+'</button>'}).join("")+'</div>'+({agenda:agenda,taken:taken,lijsten:lijsten,eten:eten,wand:wall})[S.tab]();fillev();extLoad();
 }
 $("app").onclick=function(e){
   var t=e.target.closest("[data-a]");if(!t||t.tagName==="INPUT")return;var a=t.dataset.a,x;
@@ -290,7 +342,7 @@ $("app").onclick=function(e){
     if(n===0)d=new Date();else if(S.tab==="agenda"&&S.view==="maand"){d.setDate(1);d.setMonth(d.getMonth()+n)}else d.setDate(d.getDate()+n*(S.tab==="eten"||S.view==="week"?7:1));
     S.sel=iso(d)}
   else if(a==="savep"){var nm=val("pn");if(!nm)return;add("people",{name:nm,color:$("pc").value,emoji:$("pe").value,stars:0});S.addp=false}
-  else if(a==="saveev"){var ti=val("et");if(!ti)return;var o={title:ti,date:val("ed")||S.sel,time:val("eh")?val("eh")+":"+(val("em")||"00"):"",who:val("ew"),rep:val("er")};
+  else if(a==="saveev"){var ti=val("et");if(!ti)return;var o={title:ti,date:val("ed")||S.sel,time:val("eh")?val("eh")+":"+(val("em")||"00"):"",who:val("ew"),rep:val("er"),cd:$("ecd")?$("ecd").checked:false};
     if(S.eid){upd("events",S.eid,o);S.eid=""}else add("events",o)}
   else if(a==="editev"){S.eid=t.dataset.id;S.modal=true}
   else if(a==="cancelev")S.eid="";
@@ -299,7 +351,7 @@ $("app").onclick=function(e){
   else if(a==="fab")S.addt=!S.addt;
   else if(a==="edit")S.edit=!S.edit;
   else if(a==="deltask")del("tasks",t.dataset.id);
-  else if(a==="tog"){var c=t.dataset.c,it=data[c].find(function(z){return z.id===t.dataset.id});if(it){if(c==="tasks"){var td=iso(new Date()),was=it.doneOn===td;upd(c,it.id,{doneOn:was?"":td});var pp=data.people.find(function(q){return q.id===it.who});if(pp){var np={stars:Math.max(0,(pp.stars||0)+(was?-1:1)*(it.stars||1))};
+  else if(a==="tog"){var c=t.dataset.c,it=data[c].find(function(z){return z.id===t.dataset.id});if(it){if(c==="tasks"){var td=iso(new Date()),was=it.doneOn===td;if(isKid()){if(!was)upd(c,it.id,{pend:it.pend===td?"":td});return}upd(c,it.id,{doneOn:was?"":td,pend:""});var pp=data.people.find(function(q){return q.id===it.who});if(pp){var np={stars:Math.max(0,(pp.stars||0)+(was?-1:1)*(it.stars||1))};
       if(!was){var tl=data.tasks.filter(function(x){return x.who===pp.id&&(x.daily?dayOk(x):x.date===td)});
         if(tl.length&&tl.every(function(x){return x.id===it.id||x.doneOn===td})&&pp.lastFull!==td){var yy=new Date();yy.setDate(yy.getDate()-1);np.streak=pp.lastFull===iso(yy)?(pp.streak||0)+1:1;np.lastFull=td;np.stars+=1;celebrate(pp.name,np.streak)}}
       upd("people",pp.id,np)}}else upd(c,it.id,{done:!it.done})}return}
@@ -315,6 +367,16 @@ $("app").onclick=function(e){
   else if(a==="avpick"){avFor=t.dataset.id;$("avfile").click();return}
   else if(a==="avdel"){upd("people",t.dataset.id,{photo:""});return}
   else if(a==="sstest"){if(!PH.length){ban("Kies eerst foto’s","🖼️");return}S.prof=false;render();ssStart();return}
+  else if(a==="unlock"){sha(val("pnp")).then(function(h){if(h===pinH()){unl=Date.now()+300000;S.pinpad=false;render()}else{var e=$("pne");if(e)e.textContent="Onjuiste pincode"}});return}
+  else if(a==="cancelpin"){S.pinpad=false}
+  else if(a==="setpin"){var pv=val("pin1");if(pv.length<4){ban("Minimaal 4 cijfers","⚠️");return}sha(pv).then(function(h){put("settings","pin",{hash:h});unl=Date.now()+300000;ban("Pincode ingesteld","🔒")});return}
+  else if(a==="delpin"){del("settings","pin");return}
+  else if(a==="backup"){backupBk();return}
+  else if(a==="restore"){$("rsfile").click();return}
+  else if(a==="rej"){upd("tasks",t.dataset.id,{pend:""});return}
+  else if(a==="qa"){var q=val("qa");if(!q)return;var o=qparse(q);if(!o.title){ban("Geen titel gevonden","⚠️");return}add("events",{title:o.title,date:o.date,time:o.time,who:o.who,rep:o.rep});ban("Toegevoegd: "+o.title+" · "+o.date+(o.time?" "+o.time:""),"✅");return}
+  else if(a==="gadd"){var ge=t.dataset.e,gn=t.dataset.n,ex=data.items.find(function(i){return i.list==="Boodschappen"&&i.icon===ge&&i.text===gn&&!i.done});if(ex)upd("items",ex.id,{qty:(ex.qty||1)+1});else add("items",{list:"Boodschappen",text:gn,icon:ge,qty:1,done:false});return}
+  else if(a==="gclear"){var gl=t.dataset.l;data.items.filter(function(i){return i.list===gl&&i.done}).forEach(function(i){del("items",i.id)});return}
   else if(a==="additem"){var l=t.dataset.l,tx=val("li-"+l);if(!tx)return;add("items",{list:l,text:tx,done:false})}
   else if(a==="delitem")del("items",t.dataset.id);
   render()};
@@ -325,10 +387,12 @@ var tm0="light";try{tm0=localStorage.getItem("thm2")||"light"}catch(e){}
 theme(tm0);
 $("phfile").onchange=function(){var f=Array.from(this.files);this.value="";addPhotos(f)};
 $("avfile").onchange=function(){var f=this.files[0];this.value="";if(f&&avFor)setAvatar(avFor,f)};
+$("rsfile").onchange=function(){var f=this.files[0];this.value="";if(f)restoreBk(f)};
 $("th").onclick=function(){var c=document.documentElement.getAttribute("data-theme")||"auto";theme(c==="auto"?"light":c==="light"?"dark":"auto")};
 function bellUpd(){var b=$("bell");if(!window.Notification){b.style.display="none";return}b.textContent=Notification.permission==="granted"?"🔔":"🔕"}
 $("bell").onclick=function(){if(window.Notification&&Notification.permission!=="granted")Notification.requestPermission().then(function(){bellUpd();pushOn()});else ban("Meldingen staan aan")};
-bellUpd();$("meb").onclick=function(){S.prof=!S.prof;render()};
+bellUpd();$("meb").onclick=function(){if(isKid()){S.pinpad=true;render();return}S.prof=!S.prof;render()};
+$("lk").onclick=function(){if(!pinH()){S.prof=true;render();return}if(isKid()){S.pinpad=!S.pinpad;render()}else{unl=0;S.prof=false;render()}};
 render();note("Laden…");
 var SUPABASE_URL="https://vgbxhqbelqiqulocrnzd.supabase.co",SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZnYnhocWJlbHFpcXVsb2NybnpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxODQ5OTYsImV4cCI6MjEwODc2MDk5Nn0.UKQpXsmZ33cwXcmPebQlwsgwdl57B2zKge2JQNeEsKk",sb=null;
 function wr(p){return Promise.resolve(p).then(function(r){if(r.error)throw r.error;load()})}
@@ -349,7 +413,8 @@ async function load(){var r=await sb.from("docs").select("collection,id,data");i
   if(prev){
     Object.keys(snap).forEach(function(k){var n=snap[k],o=prev[k],c=k.split("/")[0],t=n.title||n.text||"";
       if(!o){if(n.by&&n.by!==me)notify(cap(n.by)+" heeft "+L[c]+" toegevoegd: "+t)}
-      else if(c==="events"&&n.by&&n.by!==me&&JSON.stringify(o)!==JSON.stringify(n))notify(cap(n.by)+" heeft een afspraak aangepast: "+t)});
+      else if(c==="events"&&n.by&&n.by!==me&&JSON.stringify(o)!==JSON.stringify(n))notify(cap(n.by)+" heeft een afspraak aangepast: "+t)
+      else if(c==="tasks"&&n.pend&&n.pend!==o.pend&&n.by&&n.by!==me)notify("⏳ "+pname(n.who)+" meldt klaar: "+t)});
     Object.keys(prev).forEach(function(k){if(!snap[k]&&k.indexOf("events/")===0&&!mine(k.split("/")[1]))notify("Een afspraak is verwijderd: "+(prev[k].title||""))})}
   prev=snap;
   var a=document.activeElement;if(a&&(a.tagName==="INPUT"||a.tagName==="SELECT"))dirty=true;else render()}
